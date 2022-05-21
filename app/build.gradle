@@ -83,4 +83,6 @@ dependencies {
     // Accompanist - Pager
     implementation "com.google.accompanist:accompanist-pager:0.24.8-beta"
     implementation "com.google.accompanist:accompanist-pager-indicators:0.24.8-beta"
+
+    implementation 'com.google.android.material:material:1.6.0'
 }
