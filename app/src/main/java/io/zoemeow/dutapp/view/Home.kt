@@ -18,14 +18,16 @@ import io.zoemeow.dutapp.R
 @Composable
 fun Home() {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
         Icon(
             imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_home_24),
             contentDescription = "home",
             tint = Color.Blue,
-            modifier = Modifier.size(150.dp)
+            modifier = Modifier
+                .size(150.dp)
                 .align(Alignment.Center)
         )
     }

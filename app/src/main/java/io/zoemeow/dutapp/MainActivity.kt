@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -30,9 +29,8 @@ import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
 import io.zoemeow.dutapp.view.Account
 import io.zoemeow.dutapp.view.Home
 import io.zoemeow.dutapp.view.News
-import io.zoemeow.dutapp.viewmodel.NewsViewModel
+import io.zoemeow.dutapp.viewmodel.MainViewModel
 
-@ExperimentalPagerApi
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,7 +53,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val newsViewModel = viewModel<NewsViewModel>()
+    val mainViewModel = viewModel<MainViewModel>()
 
     Scaffold(
         topBar = {
@@ -63,23 +61,26 @@ fun MainScreen() {
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background),
                 title = {
-                    Text(text = stringResource(id = R.string.topbar_name) )
+                    Text(text = stringResource(id = R.string.topbar_name))
                 }
             )
         },
         bottomBar = { BottomNavigationBar(navController = navController) }
-    ) {
-        contentPadding ->
-        NavigationHost(navController = navController, contentPadding, newsViewModel)
+    ) { contentPadding ->
+        NavigationHost(navController = navController, contentPadding, mainViewModel)
     }
 }
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun NavigationHost(navController: NavHostController, padding: PaddingValues, newsViewModel: NewsViewModel) {
+fun NavigationHost(
+    navController: NavHostController,
+    padding: PaddingValues,
+    mainViewModel: MainViewModel,
+) {
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.News.route,
+        startDestination = NavRoutes.Account.route,
         modifier = Modifier.padding(padding)
     ) {
         composable(NavRoutes.Home.route) {
@@ -87,11 +88,11 @@ fun NavigationHost(navController: NavHostController, padding: PaddingValues, new
         }
 
         composable(NavRoutes.News.route) {
-            News(newsViewModel)
+            News(mainViewModel)
         }
 
         composable(NavRoutes.Account.route) {
-            Account()
+            Account(mainViewModel)
         }
     }
 }
@@ -118,11 +119,11 @@ fun BottomNavigationBar(navController: NavHostController) {
                     Icon(
                         imageVector = ImageVector.vectorResource(id = navItem.imageId),
                         contentDescription = navItem.title
-                    )},
+                    )
+                },
                 label = {
-                    Text(
-                        text = navItem.title
-                    )},
+                    Text(text = navItem.title)
+                },
             )
         }
     }
