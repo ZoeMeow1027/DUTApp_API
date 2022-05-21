@@ -69,8 +69,9 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
     fun logout() {
         viewModelScope.launch {
             processing.value = true
-            repository.dutLogout(sessionId.value)
+            val temp = sessionId.value
             sessionId.value = String()
+            repository.dutLogout(temp)
             processing.value = false
         }
     }
