@@ -5,24 +5,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.zoemeow.dutapp.model.NewsItem
+import io.zoemeow.dutapp.model.NewsListItem
 import io.zoemeow.dutapp.model.NewsType
+import io.zoemeow.dutapp.model.SubjectFeeListItem
+import io.zoemeow.dutapp.model.SubjectScheduleListItem
 import io.zoemeow.dutapp.repository.DutMainRepository
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: DutMainRepository) : ViewModel() {
-    val dataGlobal: MutableState<NewsItem> = mutableStateOf(NewsItem())
-    val dataSubjects: MutableState<NewsItem> = mutableStateOf(NewsItem())
+    // Get news
+    val dataGlobal: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
+    val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
 
     val loadingGlobal: MutableState<Boolean> = mutableStateOf(false)
     val loadingSubjects: MutableState<Boolean> = mutableStateOf(false)
-
-    init {
-        getAllNewsGlobalFromServer()
-        getAllNewsSubjectsFromServer()
-    }
 
     fun getAllNewsGlobalFromServer(page: Int = 1) {
         viewModelScope.launch {
@@ -30,6 +28,7 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
                 loadingGlobal.value = true
                 dataGlobal.value = repository.getAllNews(NewsType.Global, page)
             } catch (_: Exception) {
+
             }
 
             loadingGlobal.value = false
@@ -42,12 +41,14 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
                 loadingSubjects.value = true
                 dataSubjects.value = repository.getAllNews(NewsType.Subjects, page)
             } catch (_: Exception) {
+
             }
 
             loadingSubjects.value = false
         }
     }
 
+    // Login/logout
     private val processing: MutableState<Boolean> = mutableStateOf(false)
     private val sessionId: MutableState<String> = mutableStateOf(String())
 
@@ -82,5 +83,27 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
                     false
                 else sessionId.value.isNotEmpty()
                 )
+    }
+
+    // Get subject schedule and subject fee
+    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> = mutableStateOf(SubjectScheduleListItem())
+    val dataSubjectFee: MutableState<SubjectFeeListItem> = mutableStateOf(SubjectFeeListItem())
+    fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
+        viewModelScope.launch {
+            try {
+                processing.value = true
+                dataSubjectSchedule.value = repository.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
+                dataSubjectFee.value = repository.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
+            }
+            catch (_: Exception) {
+
+            }
+            processing.value = false
+        }
+    }
+
+    init {
+        getAllNewsGlobalFromServer()
+        getAllNewsSubjectsFromServer()
     }
 }
