@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import io.zoemeow.dutapp.model.SubjectFeeItem
 import io.zoemeow.dutapp.model.SubjectFeeListItem
+import io.zoemeow.dutapp.model.SubjectScheduleItem
 import io.zoemeow.dutapp.model.SubjectScheduleListItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -29,29 +31,21 @@ import java.util.*
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
-    if (!mainViewModel.loggedIn()) {
-        SubjectsNotLoggedIn()
-    }
-    else {
+    if (mainViewModel.loggedIn()) {
         val tabTitles = listOf("Subjects Schedule", "Subjects Fee")
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
 
         Column {
             TabRow(
-                modifier = Modifier
-                    .padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
                 selectedTabIndex = pagerState.currentPage,
             ) {
                 tabTitles.forEachIndexed { index, text ->
                     val selected = pagerState.currentPage == index
                     Tab(
                         selected = selected,
-                        onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = {
                             Text(
                                 text = text,
@@ -61,10 +55,8 @@ fun Subjects(mainViewModel: MainViewModel) {
                     )
                 }
             }
-            HorizontalPager(
-                count = tabTitles.size,
-                state = pagerState,
-            ) { index ->
+            HorizontalPager(count = tabTitles.size, state = pagerState) {
+                    index ->
                 when (index) {
                     0 -> {
                         if (mainViewModel.isProcessing().value)
@@ -77,6 +69,28 @@ fun Subjects(mainViewModel: MainViewModel) {
                         else SubjectsFee(subjectFeeListItem = mainViewModel.dataSubjectFee.value)
                     }
                 }
+            }
+        }
+    } else SubjectsNotLoggedIn()
+}
+
+@Composable
+fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
+    if (subjectListItem.schedulelist != null) {
+        LazyColumn() {
+            items(subjectListItem.schedulelist) {
+                    item -> SubjectStudyItem(item = item)
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectsFee(subjectFeeListItem: SubjectFeeListItem) {
+    if (subjectFeeListItem.feelist != null) {
+        LazyColumn() {
+            items(subjectFeeListItem.feelist) {
+                    item -> SubjectsFeeItem(item)
             }
         }
     }
@@ -115,63 +129,42 @@ fun SubjectsNotLoggedIn() {
 }
 
 @Composable
-fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
-    @SuppressLint("SimpleDateFormat")
-    fun getDateString(date: Long): String {
-        val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm")
-        simpleDateFormat.timeZone = TimeZone.getTimeZone("UTC+7")
-        return simpleDateFormat.format(Date(date))
-    }
-
-    if (subjectListItem.schedulelist != null) {
-        LazyColumn() {
-            items(subjectListItem.schedulelist) {
-                    item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 5.dp, bottom = 5.dp)
-                        // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(top = 10.dp, bottom = 10.dp),
-                ) {
-                    Text("${item.ID}")
-                    Text("${item.Name}")
-                    Text("${item.ScheduleStudy}")
-                    Text("${item.Weeks}")
-                    if (item.DateExam != null)
-                        Text(getDateString(item.DateExam))
-                }
-            }
-        }
+fun SubjectStudyItem(item: SubjectScheduleItem) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 5.dp, bottom = 5.dp)
+            // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(top = 10.dp, bottom = 10.dp),
+    ) {
+        Text("${item.ID}")
+        Text("${item.Name}")
+        Text("${item.ScheduleStudy}")
+        Text("${item.Weeks}")
+        if (item.DateExam != null)
+            Text(getDateString(item.DateExam, "dd/MM/yyyy HH:mm", "GMT+7"))
     }
 }
 
 @Composable
-fun SubjectsFee(subjectFeeListItem: SubjectFeeListItem) {
-    if (subjectFeeListItem.feelist != null) {
-        LazyColumn() {
-            items(subjectFeeListItem.feelist) {
-                    item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 5.dp, bottom = 5.dp)
-                        // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(top = 10.dp, bottom = 10.dp),
-                ) {
-                    Text("${item.ID}")
-                    Text("${item.Name}")
-                    Text("${item.Credit}")
-                    Text("${item.IsHighQuality}")
-                    Text("${item.Price}")
-                    Text("${item.Debt}")
-                    Text("${item.IsReStudy}")
-                }
-            }
-        }
+fun SubjectsFeeItem(item: SubjectFeeItem) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 5.dp, bottom = 5.dp)
+            // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(top = 10.dp, bottom = 10.dp),
+    ) {
+        Text("${item.ID}")
+        Text("${item.Name}")
+        Text("${item.Credit}")
+        Text("${item.IsHighQuality}")
+        Text("${item.Price}")
+        Text("${item.Debt}")
+        Text("${item.IsReStudy}")
     }
 }

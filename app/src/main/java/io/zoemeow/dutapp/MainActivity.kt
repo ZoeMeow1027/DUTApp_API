@@ -7,13 +7,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -21,16 +26,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.pager.ExperimentalPagerApi
 import dagger.hilt.android.AndroidEntryPoint
+import io.zoemeow.dutapp.model.NewsItem
 import io.zoemeow.dutapp.navbar.NavBarItemObject
 import io.zoemeow.dutapp.navbar.NavRoutes
 import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
-import io.zoemeow.dutapp.view.Account
-import io.zoemeow.dutapp.view.Home
-import io.zoemeow.dutapp.view.News
-import io.zoemeow.dutapp.view.Subjects
+import io.zoemeow.dutapp.view.*
 import io.zoemeow.dutapp.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -50,34 +53,63 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterialApi::class,
+)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
     val mainViewModel = viewModel<MainViewModel>()
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background),
-                title = {
-                    Text(text = stringResource(id = R.string.topbar_name))
-                }
-            )
+    val unit: MutableState<NewsItem> = remember { mutableStateOf(NewsItem()) }
+    val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+    val scope = rememberCoroutineScope()
+
+    if (!sheetState.isVisible) {
+        unit.value = NewsItem()
+    }
+
+    ModalBottomSheetLayout(
+        sheetState = sheetState,
+        // https://stackoverflow.com/a/68608137
+        sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        sheetContent = {
+            NewsDetails(newsItemChosen = unit.value)
         },
-        bottomBar = { BottomNavigationBar(navController = navController) }
-    ) { contentPadding ->
-        NavigationHost(navController = navController, contentPadding, mainViewModel)
+    ) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.background),
+                    title = {
+                        Text(text = stringResource(id = R.string.topbar_name))
+                    }
+                )
+            },
+            bottomBar = { BottomNavigationBar(navController = navController) }
+        ) { contentPadding ->
+            NavigationHost(
+                navController = navController,
+                contentPadding,
+                mainViewModel
+            ) { callback ->
+                unit.value = callback
+                scope.launch {
+                    sheetState.show()
+                }
+            }
+        }
     }
 }
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun NavigationHost(
     navController: NavHostController,
     padding: PaddingValues,
     mainViewModel: MainViewModel,
+    callBack: (NewsItem) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -89,7 +121,9 @@ fun NavigationHost(
         }
 
         composable(NavRoutes.News.route) {
-            News(mainViewModel)
+            News(mainViewModel) { item ->
+                callBack(item)
+            }
         }
 
         composable(NavRoutes.Subject.route) {
