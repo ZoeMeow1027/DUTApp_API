@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -57,6 +58,7 @@ fun AccountNavigationHost(mainViewModel: MainViewModel, navController: NavHostCo
         }
 
         composable(NavLoginRoutes.AccountPageLoggedIn.route) {
+            mainViewModel.getSubjectScheduleAndFee(21, 2, false)
             AccountPageLoggedIn(
                 logout = {
                     mainViewModel.logout()
@@ -71,11 +73,13 @@ fun AccountNavigationHost(mainViewModel: MainViewModel, navController: NavHostCo
 
 @Composable
 fun AccountPageNotLoggedIn(loginRequest: () -> Unit) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(20.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp)
+    ) {
         Surface(modifier = Modifier.fillMaxWidth()) {
-            Column() {
+            Column {
                 Text(
                     text = "You are not logged in.",
                     style = MaterialTheme.typography.headlineSmall
@@ -196,6 +200,7 @@ fun AccountPageLogin(
                             pass.value = String()
                             clicked.value = false
                             enabledControls.value = true
+                            loggedInRequest()
                         }
                     )
                 }
@@ -222,7 +227,10 @@ fun AccountCheckLogin(
 
 @Composable
 fun AccountPageLoggedIn(logout: () -> Unit) {
-    Column() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
         Button(
             onClick = logout
         ) {
@@ -230,3 +238,4 @@ fun AccountPageLoggedIn(logout: () -> Unit) {
         }
     }
 }
+

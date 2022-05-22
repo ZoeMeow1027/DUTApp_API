@@ -15,6 +15,11 @@ object NavBarItemObject {
             route = "news"
         ),
         NavBarItems(
+            title = "Subject",
+            imageId = R.drawable.ic_baseline_subject_24,
+            route = "subject"
+        ),
+        NavBarItems(
             title = "Account",
             imageId = R.drawable.ic_baseline_accountcircle_24,
             route = "account"

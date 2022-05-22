@@ -29,6 +29,7 @@ import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
 import io.zoemeow.dutapp.view.Account
 import io.zoemeow.dutapp.view.Home
 import io.zoemeow.dutapp.view.News
+import io.zoemeow.dutapp.view.Subjects
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @AndroidEntryPoint
@@ -91,6 +92,10 @@ fun NavigationHost(
             News(mainViewModel)
         }
 
+        composable(NavRoutes.Subject.route) {
+            Subjects(mainViewModel)
+        }
+
         composable(NavRoutes.Account.route) {
             Account(mainViewModel)
         }
@@ -99,7 +104,7 @@ fun NavigationHost(
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
-    NavigationBar() {
+    NavigationBar {
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
 
@@ -122,7 +127,14 @@ fun BottomNavigationBar(navController: NavHostController) {
                     )
                 },
                 label = {
-                    Text(text = navItem.title)
+                    Text(
+                        text = navItem.title,
+                        style = (
+                                if (currentRoute == navItem.route)
+                                    MaterialTheme.typography.titleMedium
+                                else MaterialTheme.typography.titleSmall
+                                )
+                    )
                 },
             )
         }

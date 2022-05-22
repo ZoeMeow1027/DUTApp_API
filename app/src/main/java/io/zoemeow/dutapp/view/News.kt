@@ -1,5 +1,6 @@
 package io.zoemeow.dutapp.view
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,16 +21,11 @@ import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import io.zoemeow.dutapp.model.NewsListItem
+import io.zoemeow.dutapp.model.NewsItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
-import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
 
 @ExperimentalPagerApi
 @Composable
@@ -37,13 +33,12 @@ fun News(mainViewModel: MainViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
     ) {
         val tabTitles = listOf("News Global", "News Subjects")
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
 
-        Column() {
+        Column {
             TabRow(
                 modifier = Modifier
                     .padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
@@ -150,7 +145,8 @@ fun NewsSubjectView(mainViewModel: MainViewModel) {
 
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
-fun NewsLoadList(newsList: List<NewsListItem>) {
+fun NewsLoadList(newsList: List<NewsItem>) {
+    @SuppressLint("SimpleDateFormat")
     fun getDateString(date: Long): String {
         return SimpleDateFormat("dd/MM/yyyy").format(Date(date))
     }
