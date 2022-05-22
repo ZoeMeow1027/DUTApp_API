@@ -2,6 +2,7 @@ package io.zoemeow.dutapp.view
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +16,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -27,9 +30,9 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-@ExperimentalPagerApi
+@OptIn(ExperimentalPagerApi::class)
 @Composable
-fun News(mainViewModel: MainViewModel) {
+fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,8 +70,12 @@ fun News(mainViewModel: MainViewModel) {
                 state = pagerState,
             ) { index ->
                 when (index) {
-                    0 -> NewsGlobalView(mainViewModel)
-                    1 -> NewsSubjectView(mainViewModel)
+                    0 -> NewsGlobalView(mainViewModel) { item ->
+                        callBack(item)
+                    }
+                    1 -> NewsSubjectView(mainViewModel) { item ->
+                        callBack(item)
+                    }
                 }
             }
         }
@@ -76,7 +83,7 @@ fun News(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun NewsGlobalView(mainViewModel: MainViewModel) {
+fun NewsGlobalView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
         state = swipeRefreshState,
@@ -104,13 +111,15 @@ fun NewsGlobalView(mainViewModel: MainViewModel) {
             swipeRefreshState.isRefreshing = mainViewModel.loadingGlobal.value
         } else {
             swipeRefreshState.isRefreshing = false
-            NewsLoadList(mainViewModel.dataGlobal.value.newslist!!)
+            NewsLoadList(mainViewModel.dataGlobal.value.newslist!!) { item ->
+                callBack(item)
+            }
         }
     }
 }
 
 @Composable
-fun NewsSubjectView(mainViewModel: MainViewModel) {
+fun NewsSubjectView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
         state = swipeRefreshState,
@@ -138,19 +147,25 @@ fun NewsSubjectView(mainViewModel: MainViewModel) {
             swipeRefreshState.isRefreshing = mainViewModel.loadingSubjects.value
         } else {
             swipeRefreshState.isRefreshing = false
-            NewsLoadList(mainViewModel.dataSubjects.value.newslist!!)
+            NewsLoadList(mainViewModel.dataSubjects.value.newslist!!) { item ->
+                callBack(item)
+            }
         }
     }
 }
 
+@SuppressLint("SimpleDateFormat")
+fun getDateString(date: Long, dateFormat: String, gmt: String = "UTC"): String {
+    // "dd/MM/yyyy"
+    // "dd/MM/yyyy HH:mm"
+    val simpleDateFormat = SimpleDateFormat(dateFormat)
+    simpleDateFormat.timeZone = TimeZone.getTimeZone(gmt)
+    return simpleDateFormat.format(Date(date))
+}
+
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
-fun NewsLoadList(newsList: List<NewsItem>) {
-    @SuppressLint("SimpleDateFormat")
-    fun getDateString(date: Long): String {
-        return SimpleDateFormat("dd/MM/yyyy").format(Date(date))
-    }
-
+fun NewsLoadList(newsList: List<NewsItem>, callBack: (NewsItem) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,7 +181,10 @@ fun NewsLoadList(newsList: List<NewsItem>) {
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(top = 10.dp, bottom = 10.dp),
+                    .padding(top = 10.dp, bottom = 10.dp)
+                    .clickable {
+                        callBack(item)
+                    },
             ) {
                 Column(
                     horizontalAlignment = Alignment.Start,
@@ -175,19 +193,63 @@ fun NewsLoadList(newsList: List<NewsItem>) {
                 ) {
                     Text(
                         text = item.title!!,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
+                    Spacer(modifier = Modifier.size(5.dp))
                     Text(
                         text = item.contenttext!!,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        // https://stackoverflow.com/questions/65736375/how-to-show-ellipsis-three-dots-at-the-end-of-a-text-line-in-android-jetpack-c
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(modifier = Modifier.size(20.dp))
                     Text(
-                        text = getDateString(item.date!!),
-                        style = MaterialTheme.typography.bodySmall
+                        text = getDateString(item.date!!, "dd/MM/yyyy"),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun NewsDetails(newsItemChosen: NewsItem) {
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.onSecondary)
+            .padding(20.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top,
+        ) {
+            Text(
+                text = "${newsItemChosen.title}",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.size(5.dp))
+            Text(
+                text = "Posted on ${
+                    getDateString(
+                        newsItemChosen.date ?: 0,
+                        "dd/MM/yyyy"
+                    )
+                }",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.size(15.dp))
+            Text(
+                text = "${newsItemChosen.contenttext}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(modifier = Modifier.size(20.dp))
+            Text(
+                text = "(Swipe bottom or click empty space above this to exit)",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

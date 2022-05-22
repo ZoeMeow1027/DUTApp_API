@@ -5,7 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.zoemeow.dutapp.network.DutFuncApi
-import io.zoemeow.dutapp.repository.DutMainRepository
+import io.zoemeow.dutapp.repository.DutNewsRepository
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 object AppModule {
     @Singleton
     @Provides
-    fun provideNewsRepository(api: DutFuncApi) = DutMainRepository(api)
+    fun provideNewsRepository(api: DutFuncApi) = DutNewsRepository(api)
 
     @Singleton
     @Provides

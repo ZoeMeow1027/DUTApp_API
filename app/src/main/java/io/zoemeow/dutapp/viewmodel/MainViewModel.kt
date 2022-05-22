@@ -9,12 +9,16 @@ import io.zoemeow.dutapp.model.NewsListItem
 import io.zoemeow.dutapp.model.NewsType
 import io.zoemeow.dutapp.model.SubjectFeeListItem
 import io.zoemeow.dutapp.model.SubjectScheduleListItem
-import io.zoemeow.dutapp.repository.DutMainRepository
+import io.zoemeow.dutapp.repository.DutAccountRepository
+import io.zoemeow.dutapp.repository.DutNewsRepository
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val repository: DutMainRepository) : ViewModel() {
+class MainViewModel @Inject constructor(
+    private val dutNewsRepo: DutNewsRepository,
+    private val dutAccRepo: DutAccountRepository
+) : ViewModel() {
     // Get news
     val dataGlobal: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
     val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
@@ -26,7 +30,7 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
         viewModelScope.launch {
             try {
                 loadingGlobal.value = true
-                dataGlobal.value = repository.getAllNews(NewsType.Global, page)
+                dataGlobal.value = dutNewsRepo.getAllNews(NewsType.Global, page)
             } catch (_: Exception) {
 
             }
@@ -39,7 +43,7 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
         viewModelScope.launch {
             try {
                 loadingSubjects.value = true
-                dataSubjects.value = repository.getAllNews(NewsType.Subjects, page)
+                dataSubjects.value = dutNewsRepo.getAllNews(NewsType.Subjects, page)
             } catch (_: Exception) {
 
             }
@@ -55,7 +59,7 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
     fun login(user: String, pass: String) {
         viewModelScope.launch {
             processing.value = true
-            val result = repository.dutLogin(user, pass)
+            val result = dutAccRepo.dutLogin(user, pass)
             if (result.loggedin) {
                 sessionId.value = result.sessionid!!
             }
@@ -72,7 +76,7 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
             processing.value = true
             val temp = sessionId.value
             sessionId.value = String()
-            repository.dutLogout(temp)
+            dutAccRepo.dutLogout(temp)
             processing.value = false
         }
     }
@@ -86,16 +90,18 @@ class MainViewModel @Inject constructor(private val repository: DutMainRepositor
     }
 
     // Get subject schedule and subject fee
-    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> = mutableStateOf(SubjectScheduleListItem())
+    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> =
+        mutableStateOf(SubjectScheduleListItem())
     val dataSubjectFee: MutableState<SubjectFeeListItem> = mutableStateOf(SubjectFeeListItem())
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
                 processing.value = true
-                dataSubjectSchedule.value = repository.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
-                dataSubjectFee.value = repository.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
-            }
-            catch (_: Exception) {
+                dataSubjectSchedule.value =
+                    dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
+                dataSubjectFee.value =
+                    dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
+            } catch (_: Exception) {
 
             }
             processing.value = false
