@@ -23,6 +23,13 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.model.NewsListItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.*
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 
 @ExperimentalPagerApi
 @Composable
@@ -141,8 +148,13 @@ fun NewsSubjectView(mainViewModel: MainViewModel) {
     }
 }
 
+// https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
 fun NewsLoadList(newsList: List<NewsListItem>) {
+    fun getDateString(date: Long): String {
+        return SimpleDateFormat("dd/MM/yyyy").format(Date(date))
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,7 +170,6 @@ fun NewsLoadList(newsList: List<NewsListItem>) {
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
-//                    .background(Color(0xFF00D724))
                     .padding(top = 10.dp, bottom = 10.dp),
             ) {
                 Column(
@@ -176,7 +187,7 @@ fun NewsLoadList(newsList: List<NewsListItem>) {
                     )
                     Spacer(modifier = Modifier.size(20.dp))
                     Text(
-                        text = item.date!!,
+                        text = getDateString(item.date!!),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
