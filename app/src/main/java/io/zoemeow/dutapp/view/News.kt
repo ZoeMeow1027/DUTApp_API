@@ -24,13 +24,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -287,7 +284,7 @@ fun NewsDetails(newsItem: NewsItem) {
                             .getStringAnnotations(item.position!!.toString(), it, it)
                             .firstOrNull()
                             ?.let { url ->
-                                val intent =  Intent(Intent.ACTION_VIEW, Uri.parse(url.item))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url.item.lowercase()))
                                 context.startActivity(intent)
                             }
                     }
