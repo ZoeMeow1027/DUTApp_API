@@ -74,8 +74,9 @@ fun MainScreen() {
         sheetState = sheetState,
         // https://stackoverflow.com/a/68608137
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
         sheetContent = {
-            NewsDetails(newsItemChosen = unit.value)
+            NewsDetails(newsItem = unit.value)
         },
     ) {
         Scaffold(
