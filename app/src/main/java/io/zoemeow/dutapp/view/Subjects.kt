@@ -1,6 +1,5 @@
 package io.zoemeow.dutapp.view
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,8 +24,6 @@ import io.zoemeow.dutapp.model.SubjectScheduleItem
 import io.zoemeow.dutapp.model.SubjectScheduleListItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable

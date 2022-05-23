@@ -1,24 +1,38 @@
 package io.zoemeow.dutapp.view
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -43,19 +57,14 @@ fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
 
         Column {
             TabRow(
-                modifier = Modifier
-                    .padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
                 selectedTabIndex = pagerState.currentPage,
             ) {
                 tabTitles.forEachIndexed { index, text ->
                     val selected = pagerState.currentPage == index
                     Tab(
                         selected = selected,
-                        onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = {
                             Text(
                                 text = text,
@@ -65,17 +74,16 @@ fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
                     )
                 }
             }
-            HorizontalPager(
-                count = tabTitles.size,
-                state = pagerState,
-            ) { index ->
+            HorizontalPager(count = tabTitles.size, state = pagerState) { index ->
                 when (index) {
-                    0 -> NewsGlobalView(mainViewModel) { item ->
-                        callBack(item)
-                    }
-                    1 -> NewsSubjectView(mainViewModel) { item ->
-                        callBack(item)
-                    }
+                    0 -> NewsGlobalView(
+                        mainViewModel,
+                        callBack = { callBack(it)}
+                    )
+                    1 -> NewsSubjectView(
+                        mainViewModel,
+                        callBack = { callBack(it)}
+                    )
                 }
             }
         }
@@ -100,20 +108,18 @@ fun NewsGlobalView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(
-                    if (mainViewModel.loadingGlobal.value) loadingText
-                    else errorText
-                ) { item ->
-                    Text(item)
+                items(if (mainViewModel.loadingGlobal.value) loadingText else errorText) {
+                        item -> Text(item)
                 }
             }
 
             swipeRefreshState.isRefreshing = mainViewModel.loadingGlobal.value
         } else {
             swipeRefreshState.isRefreshing = false
-            NewsLoadList(mainViewModel.dataGlobal.value.newslist!!) { item ->
-                callBack(item)
-            }
+            NewsLoadList(
+                mainViewModel.dataGlobal.value.newslist!!,
+                callBack = { item -> callBack(item) }
+            )
         }
     }
 }
@@ -138,18 +144,17 @@ fun NewsSubjectView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) 
             ) {
                 items(
                     if (mainViewModel.loadingSubjects.value) loadingText
-                    else errorText
-                ) { item ->
-                    Text(item)
-                }
+                    else errorText,
+                    itemContent = { Text(it) }
+                )
             }
-
             swipeRefreshState.isRefreshing = mainViewModel.loadingSubjects.value
         } else {
             swipeRefreshState.isRefreshing = false
-            NewsLoadList(mainViewModel.dataSubjects.value.newslist!!) { item ->
-                callBack(item)
-            }
+            NewsLoadList(
+                mainViewModel.dataSubjects.value.newslist!!,
+                callBack = { callBack(it) }
+            )
         }
     }
 }
@@ -182,9 +187,7 @@ fun NewsLoadList(newsList: List<NewsItem>, callBack: (NewsItem) -> Unit) {
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(top = 10.dp, bottom = 10.dp)
-                    .clickable {
-                        callBack(item)
-                    },
+                    .clickable { callBack(item) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.Start,
@@ -215,34 +218,80 @@ fun NewsLoadList(newsList: List<NewsItem>, callBack: (NewsItem) -> Unit) {
 }
 
 @Composable
-fun NewsDetails(newsItemChosen: NewsItem) {
+fun NewsDetails(newsItem: NewsItem) {
     Box(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.onSecondary)
             .padding(20.dp)
+            .background(MaterialTheme.colorScheme.onSecondary)
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
         ) {
             Text(
-                text = "${newsItemChosen.title}",
+                text = "${newsItem.title}",
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.size(5.dp))
             Text(
                 text = "Posted on ${
                     getDateString(
-                        newsItemChosen.date ?: 0,
+                        newsItem.date ?: 0,
                         "dd/MM/yyyy"
                     )
                 }",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.size(15.dp))
-            Text(
-                text = "${newsItemChosen.contenttext}",
+            val annotatedString = buildAnnotatedString {
+                if (newsItem.contenttext != null) {
+                    append(newsItem.contenttext)
+                    addStyle(
+                        style = SpanStyle(
+                            color = if (isSystemInDarkTheme()) Color.White else Color.Black,
+                        ),
+                        start = 0,
+                        end = newsItem.contenttext.length
+                    )
+                    if (newsItem.links != null) {
+                        newsItem.links.forEach {
+                            addStringAnnotation(
+                                tag = it.position!!.toString(),
+                                annotation = it.url!!,
+                                start = it.position,
+                                end = it.position + it.text!!.length
+                            )
+                            addStyle(
+                                style = SpanStyle(
+                                    color = Color(0xff64B5F6),
+                                ),
+                                start = it.position,
+                                end = it.position + it.text.length
+                            )
+                        }
+                    }
+                }
+            }
+//            Text(
+//                text = "${newsItem.contenttext}",
+//                style = MaterialTheme.typography.bodyMedium,
+//            )
+            val context = LocalContext.current
+            ClickableText(
+                text = annotatedString,
                 style = MaterialTheme.typography.bodyMedium,
+                onClick = { it ->
+                    newsItem.links?.forEach {
+                            item ->
+                        annotatedString
+                            .getStringAnnotations(item.position!!.toString(), it, it)
+                            .firstOrNull()
+                            ?.let { url ->
+                                val intent =  Intent(Intent.ACTION_VIEW, Uri.parse(url.item))
+                                context.startActivity(intent)
+                            }
+                    }
+                }
             )
             Spacer(modifier = Modifier.size(20.dp))
             Text(

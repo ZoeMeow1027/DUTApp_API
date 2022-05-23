@@ -27,6 +27,4 @@ class DutNewsRepository @Inject constructor(private val api: DutFuncApi) {
         loading = false
         return data
     }
-
-
 }
