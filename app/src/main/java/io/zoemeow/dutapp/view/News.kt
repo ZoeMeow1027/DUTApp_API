@@ -16,20 +16,16 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -43,7 +39,7 @@ import java.util.*
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
+fun News(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -75,11 +71,11 @@ fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
                 when (index) {
                     0 -> NewsGlobalView(
                         mainViewModel,
-                        callBack = { callBack(it)}
+                        newsItemReceived = { newsItemReceived(it)}
                     )
                     1 -> NewsSubjectView(
                         mainViewModel,
-                        callBack = { callBack(it)}
+                        newsItemReceived = { newsItemReceived(it)}
                     )
                 }
             }
@@ -88,7 +84,7 @@ fun News(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
 }
 
 @Composable
-fun NewsGlobalView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
+fun NewsGlobalView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
         state = swipeRefreshState,
@@ -115,14 +111,14 @@ fun NewsGlobalView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
             swipeRefreshState.isRefreshing = false
             NewsLoadList(
                 mainViewModel.dataGlobal.value.newslist!!,
-                callBack = { item -> callBack(item) }
+                newsItemReceived = { item -> newsItemReceived(item) }
             )
         }
     }
 }
 
 @Composable
-fun NewsSubjectView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) {
+fun NewsSubjectView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
         state = swipeRefreshState,
@@ -150,7 +146,7 @@ fun NewsSubjectView(mainViewModel: MainViewModel, callBack: (NewsItem) -> Unit) 
             swipeRefreshState.isRefreshing = false
             NewsLoadList(
                 mainViewModel.dataSubjects.value.newslist!!,
-                callBack = { callBack(it) }
+                newsItemReceived = { newsItemReceived(it) }
             )
         }
     }
@@ -167,7 +163,7 @@ fun getDateString(date: Long, dateFormat: String, gmt: String = "UTC"): String {
 
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
-fun NewsLoadList(newsList: List<NewsItem>, callBack: (NewsItem) -> Unit) {
+fun NewsLoadList(newsList: List<NewsItem>, newsItemReceived: (NewsItem) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -184,7 +180,7 @@ fun NewsLoadList(newsList: List<NewsItem>, callBack: (NewsItem) -> Unit) {
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(top = 10.dp, bottom = 10.dp)
-                    .clickable { callBack(item) },
+                    .clickable { newsItemReceived(item) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.Start,

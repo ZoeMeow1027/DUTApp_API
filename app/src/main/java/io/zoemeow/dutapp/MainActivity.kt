@@ -82,8 +82,7 @@ fun MainScreen() {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.background),
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
                     title = {
                         Text(text = stringResource(id = R.string.topbar_name))
                     }
@@ -93,14 +92,13 @@ fun MainScreen() {
         ) { contentPadding ->
             NavigationHost(
                 navController = navController,
-                contentPadding,
-                mainViewModel
-            ) { callback ->
-                unit.value = callback
-                scope.launch {
-                    sheetState.show()
+                padding = contentPadding,
+                mainViewModel = mainViewModel,
+                newsItemReceived = {
+                    unit.value = it
+                    scope.launch { sheetState.show() }
                 }
-            }
+            )
         }
     }
 }
@@ -110,7 +108,7 @@ fun NavigationHost(
     navController: NavHostController,
     padding: PaddingValues,
     mainViewModel: MainViewModel,
-    callBack: (NewsItem) -> Unit
+    newsItemReceived: (NewsItem) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -122,17 +120,22 @@ fun NavigationHost(
         }
 
         composable(NavRoutes.News.route) {
-            News(mainViewModel) { item ->
-                callBack(item)
-            }
+            News(
+                mainViewModel = mainViewModel,
+                newsItemReceived = { newsItemReceived(it) }
+            )
         }
 
         composable(NavRoutes.Subject.route) {
-            Subjects(mainViewModel)
+            Subjects(
+                mainViewModel = mainViewModel,
+            )
         }
 
         composable(NavRoutes.Account.route) {
-            Account(mainViewModel)
+            Account(
+                mainViewModel = mainViewModel
+            )
         }
     }
 }

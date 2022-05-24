@@ -184,8 +184,8 @@ fun AccountPageLogin(
                         )
                     }
                     AccountCheckLogin(
-                        mainViewModel,
-                        clicked.value,
+                        mainViewModel = mainViewModel,
+                        clicked = clicked.value,
                         loginFail = {
                             scope.launch {
                                 clicked.value = false
