@@ -40,10 +40,7 @@ import java.util.*
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun News(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         val tabTitles = listOf("News Global", "News Subjects")
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
@@ -105,7 +102,6 @@ fun NewsGlobalView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) ->
                         item -> Text(item)
                 }
             }
-
             swipeRefreshState.isRefreshing = mainViewModel.isProcessingNewsGlobal().value
         } else {
             swipeRefreshState.isRefreshing = false
@@ -152,29 +148,18 @@ fun NewsSubjectView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -
     }
 }
 
-@SuppressLint("SimpleDateFormat")
-fun getDateString(date: Long, dateFormat: String, gmt: String = "UTC"): String {
-    // "dd/MM/yyyy"
-    // "dd/MM/yyyy HH:mm"
-    val simpleDateFormat = SimpleDateFormat(dateFormat)
-    simpleDateFormat.timeZone = TimeZone.getTimeZone(gmt)
-    return simpleDateFormat.format(Date(date))
-}
-
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
 fun NewsLoadList(newsList: List<NewsItem>, newsItemReceived: (NewsItem) -> Unit) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
             .padding(start = 20.dp, end = 20.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
         items(newsList) { item ->
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
                     .padding(top = 5.dp, bottom = 5.dp)
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
@@ -213,8 +198,7 @@ fun NewsLoadList(newsList: List<NewsItem>, newsItemReceived: (NewsItem) -> Unit)
 @Composable
 fun NewsDetails(newsItem: NewsItem) {
     Box(
-        modifier = Modifier
-            .padding(20.dp)
+        modifier = Modifier.padding(20.dp)
             .background(MaterialTheme.colorScheme.onSecondary)
     ) {
         Column(
@@ -227,25 +211,21 @@ fun NewsDetails(newsItem: NewsItem) {
             )
             Spacer(modifier = Modifier.size(5.dp))
             Text(
-                text = "Posted on ${
-                    getDateString(
-                        newsItem.date ?: 0,
-                        "dd/MM/yyyy"
-                    )
-                }",
+                text = "Posted on ${ getDateString(newsItem.date ?: 0, "dd/MM/yyyy") }",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.size(15.dp))
             val annotatedString = buildAnnotatedString {
                 if (newsItem.contenttext != null) {
+                    // Parse all string to annotated string.
                     append(newsItem.contenttext)
+                    // Adjust color for annotated string to follow system mode.
                     addStyle(
-                        style = SpanStyle(
-                            color = if (isSystemInDarkTheme()) Color.White else Color.Black,
-                        ),
+                        style = SpanStyle(color = if (isSystemInDarkTheme()) Color.White else Color.Black),
                         start = 0,
                         end = newsItem.contenttext.length
                     )
+                    // Adjust for detected link.
                     if (newsItem.links != null) {
                         newsItem.links.forEach {
                             addStringAnnotation(
@@ -255,9 +235,7 @@ fun NewsDetails(newsItem: NewsItem) {
                                 end = it.position + it.text!!.length
                             )
                             addStyle(
-                                style = SpanStyle(
-                                    color = Color(0xff64B5F6),
-                                ),
+                                style = SpanStyle(color = Color(0xff64B5F6)),
                                 start = it.position,
                                 end = it.position + it.text.length
                             )
@@ -265,24 +243,24 @@ fun NewsDetails(newsItem: NewsItem) {
                     }
                 }
             }
-//            Text(
-//                text = "${newsItem.contenttext}",
-//                style = MaterialTheme.typography.bodyMedium,
-//            )
             val context = LocalContext.current
             ClickableText(
                 text = annotatedString,
                 style = MaterialTheme.typography.bodyMedium,
-                onClick = { it ->
-                    newsItem.links?.forEach {
-                            item ->
-                        annotatedString
-                            .getStringAnnotations(item.position!!.toString(), it, it)
-                            .firstOrNull()
-                            ?.let { url ->
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url.item.lowercase()))
-                                context.startActivity(intent)
-                            }
+                onClick = {
+                    try {
+                        newsItem.links?.forEach {
+                                item ->
+                            annotatedString
+                                .getStringAnnotations(item.position!!.toString(), it, it)
+                                .firstOrNull()
+                                ?.let { url ->
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url.item.lowercase()))
+                                    context.startActivity(intent)
+                                }
+                        }
+                    } catch (_: Exception) {
+                        // TODO: Expception for not can't open link here!
                     }
                 }
             )
@@ -294,4 +272,13 @@ fun NewsDetails(newsItem: NewsItem) {
             )
         }
     }
+}
+
+@SuppressLint("SimpleDateFormat")
+fun getDateString(date: Long, dateFormat: String, gmt: String = "UTC"): String {
+    // "dd/MM/yyyy"
+    // "dd/MM/yyyy HH:mm"
+    val simpleDateFormat = SimpleDateFormat(dateFormat)
+    simpleDateFormat.timeZone = TimeZone.getTimeZone(gmt)
+    return simpleDateFormat.format(Date(date))
 }

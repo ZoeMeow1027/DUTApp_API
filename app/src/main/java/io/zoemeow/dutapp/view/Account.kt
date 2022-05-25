@@ -126,21 +126,20 @@ fun AccountPageLogin(
         content = { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                         .navigationBarsPadding()
                         .wrapContentHeight()
                         .padding(20.dp),
                     verticalArrangement = Arrangement.Top,
                 ) {
+                    // Progress bar for logging in...
                     if (clicked.value) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
                     Spacer(modifier = Modifier.size(5.dp))
                     Text("Login", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.size(10.dp))
                     OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         value = user.value,
                         label = { Text("Username") },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -150,10 +149,8 @@ fun AccountPageLogin(
                         onValueChange = { user.value = it },
                         enabled = enabledControls.value,
                     )
-                    Spacer(Modifier.size(10.dp))
                     OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                             .focusRequester(passTextFieldFocusRequester),
                         value = pass.value,
                         label = { Text("Password") },
@@ -166,9 +163,8 @@ fun AccountPageLogin(
                         onValueChange = { pass.value = it },
                         enabled = enabledControls.value,
                     )
-                    Spacer(Modifier.size(10.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Button(

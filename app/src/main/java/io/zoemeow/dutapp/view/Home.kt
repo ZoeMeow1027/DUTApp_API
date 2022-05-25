@@ -26,8 +26,7 @@ fun Home() {
             imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_home_24),
             contentDescription = "home",
             tint = Color.Blue,
-            modifier = Modifier
-                .size(150.dp)
+            modifier = Modifier.size(150.dp)
                 .align(Alignment.Center)
         )
     }
