@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
-    if (mainViewModel.loggedIn()) {
+    if (mainViewModel.isLoggedIn()) {
         val tabTitles = listOf("Subjects Schedule", "Subjects Fee")
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
@@ -56,12 +56,12 @@ fun Subjects(mainViewModel: MainViewModel) {
                     index ->
                 when (index) {
                     0 -> {
-                        if (mainViewModel.isProcessing().value)
+                        if (mainViewModel.isProcessingAccount().value)
                             SubjectsLoadingScreen()
                         else SubjectsStudy(subjectListItem = mainViewModel.dataSubjectSchedule.value)
                     }
                     1 -> {
-                        if (mainViewModel.isProcessing().value)
+                        if (mainViewModel.isProcessingAccount().value)
                             SubjectsLoadingScreen()
                         else SubjectsFee(subjectFeeListItem = mainViewModel.dataSubjectFee.value)
                     }
