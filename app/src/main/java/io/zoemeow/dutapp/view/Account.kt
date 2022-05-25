@@ -35,7 +35,7 @@ fun AccountNavigationHost(mainViewModel: MainViewModel, navController: NavHostCo
     NavHost(
         navController = navController,
         startDestination = (
-                if (!mainViewModel.loggedIn()) NavLoginRoutes.AccountPageNotLoggedIn.route
+                if (!mainViewModel.isLoggedIn()) NavLoginRoutes.AccountPageNotLoggedIn.route
                 else NavLoginRoutes.AccountPageLoggedIn.route
                 )
     ) {
@@ -217,8 +217,8 @@ fun AccountCheckLogin(
     loginSuccess: () -> Unit
 ) {
     if (clicked) {
-        if (!mainViewModel.isProcessing().value) {
-            if (!mainViewModel.loggedIn()) {
+        if (!mainViewModel.isProcessingAccount().value) {
+            if (!mainViewModel.isLoggedIn()) {
                 loginFail()
             } else loginSuccess()
         }

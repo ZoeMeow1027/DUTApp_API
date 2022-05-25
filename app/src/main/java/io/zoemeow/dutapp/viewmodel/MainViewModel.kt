@@ -19,97 +19,91 @@ class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
     private val dutAccRepo: DutAccountRepository
 ) : ViewModel() {
-    // Get news
+    // Get news global
+    private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
+    fun isProcessingNewsGlobal(): MutableState<Boolean> {
+        return procGlobal
+    }
     val dataGlobal: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
-    val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
-
-    val loadingGlobal: MutableState<Boolean> = mutableStateOf(false)
-    val loadingSubjects: MutableState<Boolean> = mutableStateOf(false)
-
-    fun getAllNewsGlobalFromServer(page: Int = 1) {
+    fun refreshNewsGlobalFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
-                loadingGlobal.value = true
+                procGlobal.value = true
                 dataGlobal.value = dutNewsRepo.getAllNews(NewsType.Global, page)
             } catch (_: Exception) {
 
             }
 
-            loadingGlobal.value = false
+            procGlobal.value = false
         }
     }
 
-    fun getAllNewsSubjectsFromServer(page: Int = 1) {
+    // Get news subjects
+    private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
+    fun isProcessingNewsSubject(): MutableState<Boolean> {
+        return procSubjects
+    }
+    val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
+    fun refreshAllNewsSubjectsFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
-                loadingSubjects.value = true
+                procSubjects.value = true
                 dataSubjects.value = dutNewsRepo.getAllNews(NewsType.Subjects, page)
             } catch (_: Exception) {
 
             }
 
-            loadingSubjects.value = false
+            procSubjects.value = false
         }
     }
 
     // Login/logout
-    private val processing: MutableState<Boolean> = mutableStateOf(false)
     private val sessionId: MutableState<String> = mutableStateOf(String())
-
-    fun login(user: String, pass: String) {
+    private val procAccount: MutableState<Boolean> = mutableStateOf(false)
+    fun isProcessingAccount(): MutableState<Boolean> {
+        return procAccount
+    }
+    fun login(user: String, pass: String, rememberLogin: Boolean = false) {
         viewModelScope.launch {
-            processing.value = true
+            procAccount.value = true
             val result = dutAccRepo.dutLogin(user, pass)
             if (result.loggedin) {
                 sessionId.value = result.sessionid!!
             }
-            processing.value = false
+            procAccount.value = false
         }
     }
-
-    fun isProcessing(): MutableState<Boolean> {
-        return processing
-    }
-
     fun logout() {
         viewModelScope.launch {
-            processing.value = true
+            procAccount.value = true
             val temp = sessionId.value
             sessionId.value = String()
             dutAccRepo.dutLogout(temp)
-            processing.value = false
+            procAccount.value = false
         }
     }
-
-    fun loggedIn(): Boolean {
-        return (
-                if (sessionId.value == null)
-                    false
-                else sessionId.value.isNotEmpty()
-                )
+    fun isLoggedIn(): Boolean {
+        return (if (sessionId.value == null) false else sessionId.value.isNotEmpty())
     }
 
     // Get subject schedule and subject fee
-    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> =
-        mutableStateOf(SubjectScheduleListItem())
+    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> = mutableStateOf(SubjectScheduleListItem())
     val dataSubjectFee: MutableState<SubjectFeeListItem> = mutableStateOf(SubjectFeeListItem())
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
-                processing.value = true
-                dataSubjectSchedule.value =
-                    dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
-                dataSubjectFee.value =
-                    dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
+                procAccount.value = true
+                dataSubjectSchedule.value = dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
+                dataSubjectFee.value = dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
             } catch (_: Exception) {
 
             }
-            processing.value = false
+            procAccount.value = false
         }
     }
 
     init {
-        getAllNewsGlobalFromServer()
-        getAllNewsSubjectsFromServer()
+        refreshNewsGlobalFromServer()
+        refreshAllNewsSubjectsFromServer()
     }
 }

@@ -90,7 +90,7 @@ fun NewsGlobalView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) ->
         state = swipeRefreshState,
         onRefresh = {
             swipeRefreshState.isRefreshing = true
-            mainViewModel.getAllNewsGlobalFromServer()
+            mainViewModel.refreshNewsGlobalFromServer()
         }
     ) {
         if (mainViewModel.dataGlobal.value.newslist == null) {
@@ -101,12 +101,12 @@ fun NewsGlobalView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) ->
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(if (mainViewModel.loadingGlobal.value) loadingText else errorText) {
+                items(if (mainViewModel.isProcessingNewsGlobal().value) loadingText else errorText) {
                         item -> Text(item)
                 }
             }
 
-            swipeRefreshState.isRefreshing = mainViewModel.loadingGlobal.value
+            swipeRefreshState.isRefreshing = mainViewModel.isProcessingNewsGlobal().value
         } else {
             swipeRefreshState.isRefreshing = false
             NewsLoadList(
@@ -124,7 +124,7 @@ fun NewsSubjectView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -
         state = swipeRefreshState,
         onRefresh = {
             swipeRefreshState.isRefreshing = true
-            mainViewModel.getAllNewsSubjectsFromServer()
+            mainViewModel.refreshAllNewsSubjectsFromServer()
         }
     ) {
         if (mainViewModel.dataSubjects.value.newslist == null) {
@@ -136,12 +136,12 @@ fun NewsSubjectView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(
-                    if (mainViewModel.loadingSubjects.value) loadingText
+                    if (mainViewModel.isProcessingNewsSubject().value) loadingText
                     else errorText,
                     itemContent = { Text(it) }
                 )
             }
-            swipeRefreshState.isRefreshing = mainViewModel.loadingSubjects.value
+            swipeRefreshState.isRefreshing = mainViewModel.isProcessingNewsSubject().value
         } else {
             swipeRefreshState.isRefreshing = false
             NewsLoadList(
