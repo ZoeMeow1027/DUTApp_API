@@ -16,6 +16,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.model.NewsItem
+import io.zoemeow.dutapp.model.NewsListItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -66,13 +68,21 @@ fun News(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
             }
             HorizontalPager(count = tabTitles.size, state = pagerState) { index ->
                 when (index) {
-                    0 -> NewsGlobalView(
-                        mainViewModel,
-                        newsItemReceived = { newsItemReceived(it)}
+                    0 -> NewsViewHost(
+                        isLoading = mainViewModel.isProcessingNewsGlobal(),
+                        data = mainViewModel.dataGlobal,
+                        refreshRequired = {
+                            mainViewModel.refreshNewsGlobalFromServer()
+                        },
+                        newsItemReceived = { newsItemReceived(it) }
                     )
-                    1 -> NewsSubjectView(
-                        mainViewModel,
-                        newsItemReceived = { newsItemReceived(it)}
+                    1 -> NewsViewHost(
+                        isLoading = mainViewModel.isProcessingNewsSubject(),
+                        data = mainViewModel.dataSubjects,
+                        refreshRequired = {
+                            mainViewModel.refreshNewsSubjectsFromServer()
+                        },
+                        newsItemReceived = { newsItemReceived(it) }
                     )
                 }
             }
@@ -81,79 +91,51 @@ fun News(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
 }
 
 @Composable
-fun NewsGlobalView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
+fun NewsViewHost(
+    isLoading: MutableState<Boolean>,
+    data: MutableState<NewsListItem>,
+    refreshRequired: () -> Unit,
+    newsItemReceived: (NewsItem) -> Unit
+) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
         state = swipeRefreshState,
         onRefresh = {
             swipeRefreshState.isRefreshing = true
-            mainViewModel.refreshNewsGlobalFromServer()
-        }
-    ) {
-        if (mainViewModel.dataGlobal.value.newslist == null) {
-            val loadingText = arrayOf("Loading data from server", "Please wait...")
-            val errorText = arrayOf("Nothing")
-            LazyColumn(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(if (mainViewModel.isProcessingNewsGlobal().value) loadingText else errorText) {
-                        item -> Text(item)
+            refreshRequired()
+        },
+        content = {
+            if (data.value.newslist == null) {
+                swipeRefreshState.isRefreshing = isLoading.value
+
+                val loadingText = arrayOf("Loading data from server", "Please wait...")
+                val errorText = arrayOf("Nothing")
+                LazyColumn(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(if (isLoading.value) loadingText else errorText) {
+                            item -> Text(item)
+                    }
                 }
             }
-            swipeRefreshState.isRefreshing = mainViewModel.isProcessingNewsGlobal().value
-        } else {
-            swipeRefreshState.isRefreshing = false
-            NewsLoadList(
-                mainViewModel.dataGlobal.value.newslist!!,
-                newsItemReceived = { item -> newsItemReceived(item) }
-            )
-        }
-    }
-}
-
-@Composable
-fun NewsSubjectView(mainViewModel: MainViewModel, newsItemReceived: (NewsItem) -> Unit) {
-    val swipeRefreshState = rememberSwipeRefreshState(true)
-    SwipeRefresh(
-        state = swipeRefreshState,
-        onRefresh = {
-            swipeRefreshState.isRefreshing = true
-            mainViewModel.refreshAllNewsSubjectsFromServer()
-        }
-    ) {
-        if (mainViewModel.dataSubjects.value.newslist == null) {
-            val loadingText = arrayOf("Loading data from server", "Please wait...")
-            val errorText = arrayOf("Nothing")
-            LazyColumn(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(
-                    if (mainViewModel.isProcessingNewsSubject().value) loadingText
-                    else errorText,
-                    itemContent = { Text(it) }
+            else {
+                swipeRefreshState.isRefreshing = false
+                NewsLoadList(
+                    data.value.newslist!!,
+                    newsItemReceived = { item -> newsItemReceived(item) }
                 )
             }
-            swipeRefreshState.isRefreshing = mainViewModel.isProcessingNewsSubject().value
-        } else {
-            swipeRefreshState.isRefreshing = false
-            NewsLoadList(
-                mainViewModel.dataSubjects.value.newslist!!,
-                newsItemReceived = { newsItemReceived(it) }
-            )
         }
-    }
+    )
 }
 
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
 fun NewsLoadList(newsList: List<NewsItem>, newsItemReceived: (NewsItem) -> Unit) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -198,8 +180,7 @@ fun NewsLoadList(newsList: List<NewsItem>, newsItemReceived: (NewsItem) -> Unit)
 @Composable
 fun NewsDetails(newsItem: NewsItem) {
     Box(
-        modifier = Modifier.padding(20.dp)
-            .background(MaterialTheme.colorScheme.onSecondary)
+        modifier = Modifier.padding(20.dp).background(MaterialTheme.colorScheme.onSecondary)
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -226,20 +207,18 @@ fun NewsDetails(newsItem: NewsItem) {
                         end = newsItem.contenttext.length
                     )
                     // Adjust for detected link.
-                    if (newsItem.links != null) {
-                        newsItem.links.forEach {
-                            addStringAnnotation(
-                                tag = it.position!!.toString(),
-                                annotation = it.url!!,
-                                start = it.position,
-                                end = it.position + it.text!!.length
-                            )
-                            addStyle(
-                                style = SpanStyle(color = Color(0xff64B5F6)),
-                                start = it.position,
-                                end = it.position + it.text.length
-                            )
-                        }
+                    newsItem.links?.forEach {
+                        addStringAnnotation(
+                            tag = it.position!!.toString(),
+                            annotation = it.url!!,
+                            start = it.position,
+                            end = it.position + it.text!!.length
+                        )
+                        addStyle(
+                            style = SpanStyle(color = Color(0xff64B5F6)),
+                            start = it.position,
+                            end = it.position + it.text.length
+                        )
                     }
                 }
             }

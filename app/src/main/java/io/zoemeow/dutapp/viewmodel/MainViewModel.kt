@@ -44,7 +44,7 @@ class MainViewModel @Inject constructor(
         return procSubjects
     }
     val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
-    fun refreshAllNewsSubjectsFromServer(page: Int = 1) {
+    fun refreshNewsSubjectsFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
                 procSubjects.value = true
@@ -104,6 +104,6 @@ class MainViewModel @Inject constructor(
 
     init {
         refreshNewsGlobalFromServer()
-        refreshAllNewsSubjectsFromServer()
+        refreshNewsSubjectsFromServer()
     }
 }

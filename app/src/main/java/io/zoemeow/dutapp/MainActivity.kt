@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
+import androidx.navigation.PopUpToBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -75,31 +78,28 @@ fun MainScreen() {
         // https://stackoverflow.com/a/68608137
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
-        sheetContent = {
-            NewsDetails(newsItem = unit.value)
-        },
+        sheetContent = { NewsDetails(newsItem = unit.value) },
     ) {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
                     modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                    title = {
-                        Text(text = stringResource(id = R.string.topbar_name))
-                    }
+                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
                 )
             },
-            bottomBar = { BottomNavigationBar(navController = navController) }
-        ) { contentPadding ->
-            NavigationHost(
-                navController = navController,
-                padding = contentPadding,
-                mainViewModel = mainViewModel,
-                newsItemReceived = {
-                    unit.value = it
-                    scope.launch { sheetState.show() }
-                }
-            )
-        }
+            bottomBar = { BottomNavigationBar(navController = navController) },
+            content = { contentPadding ->
+                NavigationHost(
+                    navController = navController,
+                    padding = contentPadding,
+                    mainViewModel = mainViewModel,
+                    newsItemReceived = {
+                        unit.value = it
+                        scope.launch { sheetState.show() }
+                    }
+                )
+            }
+        )
     }
 }
 
@@ -150,7 +150,9 @@ fun BottomNavigationBar(navController: NavHostController) {
             NavigationBarItem(
                 selected = currentRoute == navItem.route,
                 onClick = {
-                    navController.navigate(navItem.route) {
+                    navController.navigate(
+                        navItem.route
+                    ) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
