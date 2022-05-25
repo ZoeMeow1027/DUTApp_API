@@ -1,6 +1,6 @@
 package io.zoemeow.dutapp.model
 
-data class NewsItem(
+data class NewsGlobalItem(
     val date: Long? = null,
     val title: String? = null,
     val contenttext: String? = null,

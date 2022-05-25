@@ -1,7 +1,7 @@
 package io.zoemeow.dutapp.model
 
-data class NewsListItem(
+data class NewsSubjectListItem(
     val date: Long? = null,
     val newstype: String? = null,
-    val newslist: List<NewsItem>? = null
+    val newslist: List<NewsSubjectItem>? = null
 )

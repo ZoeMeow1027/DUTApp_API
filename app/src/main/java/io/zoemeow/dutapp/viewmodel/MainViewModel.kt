@@ -1,14 +1,12 @@
 package io.zoemeow.dutapp.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.zoemeow.dutapp.model.NewsListItem
-import io.zoemeow.dutapp.model.NewsType
-import io.zoemeow.dutapp.model.SubjectFeeListItem
-import io.zoemeow.dutapp.model.SubjectScheduleListItem
+import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.repository.DutAccountRepository
 import io.zoemeow.dutapp.repository.DutNewsRepository
 import kotlinx.coroutines.launch
@@ -24,12 +22,12 @@ class MainViewModel @Inject constructor(
     fun isProcessingNewsGlobal(): MutableState<Boolean> {
         return procGlobal
     }
-    val dataGlobal: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
+    val dataGlobal: MutableState<NewsGlobalListItem> = mutableStateOf(NewsGlobalListItem())
     fun refreshNewsGlobalFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
                 procGlobal.value = true
-                dataGlobal.value = dutNewsRepo.getAllNews(NewsType.Global, page)
+                dataGlobal.value = dutNewsRepo.getNewsGlobal(page)
             } catch (_: Exception) {
 
             }
@@ -43,14 +41,15 @@ class MainViewModel @Inject constructor(
     fun isProcessingNewsSubject(): MutableState<Boolean> {
         return procSubjects
     }
-    val dataSubjects: MutableState<NewsListItem> = mutableStateOf(NewsListItem())
+    val dataSubjects: MutableState<NewsSubjectListItem> = mutableStateOf(NewsSubjectListItem())
     fun refreshNewsSubjectsFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
                 procSubjects.value = true
-                dataSubjects.value = dutNewsRepo.getAllNews(NewsType.Subjects, page)
-            } catch (_: Exception) {
-
+                dataSubjects.value = dutNewsRepo.getNewsSubject(page)
+            } catch (ex: Exception) {
+                if (ex != null)
+                    Log.d("DutNewsRepo", ex?.message.toString())
             }
 
             procSubjects.value = false
@@ -95,8 +94,9 @@ class MainViewModel @Inject constructor(
                 procAccount.value = true
                 dataSubjectSchedule.value = dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
                 dataSubjectFee.value = dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
-            } catch (_: Exception) {
-
+            } catch (ex: Exception) {
+                if (ex != null)
+                    Log.d("DutNewsRepo", ex?.message.toString())
             }
             procAccount.value = false
         }
