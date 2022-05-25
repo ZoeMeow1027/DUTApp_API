@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -28,6 +29,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsGlobalListItem
+import io.zoemeow.dutapp.R
 
 @Composable
 fun NewsGlobalViewHost(
@@ -47,7 +49,7 @@ fun NewsGlobalViewHost(
             if (data.value.newslist == null) {
                 swipeRefreshState.isRefreshing = isLoading.value
 
-                val loadingText = arrayOf("Loading data from server", "Please wait...")
+                val loadingText = arrayOf("Loading data from server\nPlease wait...")
                 val errorText = arrayOf("Nothing")
                 LazyColumn(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -77,13 +79,16 @@ fun NewsGlobalLoadList(
     newsItemReceived: (NewsGlobalItem) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
         items(newsList) { item ->
             Box(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(top = 5.dp, bottom = 5.dp)
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
@@ -122,7 +127,9 @@ fun NewsGlobalLoadList(
 @Composable
 fun NewsGlobalDetails(newsGlobalItem: NewsGlobalItem) {
     Box(
-        modifier = Modifier.padding(20.dp).background(MaterialTheme.colorScheme.onSecondary)
+        modifier = Modifier
+            .padding(20.dp)
+            .background(MaterialTheme.colorScheme.onSecondary)
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -187,7 +194,7 @@ fun NewsGlobalDetails(newsGlobalItem: NewsGlobalItem) {
             )
             Spacer(modifier = Modifier.size(20.dp))
             Text(
-                text = "(Swipe bottom or click empty space above this to exit)",
+                text = stringResource(id = R.string.newsdetails_swipeorclickabovetoexit),
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center
             )

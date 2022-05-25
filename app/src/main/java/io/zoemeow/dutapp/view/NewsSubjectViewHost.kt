@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.model.NewsGlobalListItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
 import io.zoemeow.dutapp.model.NewsSubjectListItem
@@ -48,7 +50,7 @@ fun NewsSubjectViewHost(
             if (data.value.newslist == null) {
                 swipeRefreshState.isRefreshing = isLoading.value
 
-                val loadingText = arrayOf("Loading data from server", "Please wait...")
+                val loadingText = arrayOf("Loading data from server\nPlease wait...")
                 val errorText = arrayOf("Nothing")
                 LazyColumn(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,7 +190,7 @@ fun NewsSubjectDetails(newsSubjectItem: NewsSubjectItem) {
             )
             Spacer(modifier = Modifier.size(20.dp))
             Text(
-                text = "(Swipe bottom or click empty space above this to exit)",
+                text = stringResource(id = R.string.newsdetails_swipeorclickabovetoexit),
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center
             )
