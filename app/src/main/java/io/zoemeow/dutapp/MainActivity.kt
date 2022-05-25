@@ -4,9 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
@@ -22,15 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptions
-import androidx.navigation.NavOptionsBuilder
-import androidx.navigation.PopUpToBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.zoemeow.dutapp.model.NewsItem
+import io.zoemeow.dutapp.model.NewsGlobalItem
+import io.zoemeow.dutapp.model.NewsSubjectItem
 import io.zoemeow.dutapp.navbar.NavBarItemObject
 import io.zoemeow.dutapp.navbar.NavRoutes
 import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
@@ -65,12 +61,17 @@ fun MainScreen() {
     val navController = rememberNavController()
     val mainViewModel = viewModel<MainViewModel>()
 
-    val unit: MutableState<NewsItem> = remember { mutableStateOf(NewsItem()) }
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
 
+    val tempType = remember { mutableStateOf(-1) }
+    val tempItemNewsGlobal: MutableState<NewsGlobalItem> = remember { mutableStateOf(NewsGlobalItem()) }
+    val tempItemNewsSubject: MutableState<NewsSubjectItem> = remember { mutableStateOf(NewsSubjectItem()) }
+
     if (!sheetState.isVisible) {
-        unit.value = NewsItem()
+        tempItemNewsGlobal.value = NewsGlobalItem()
+        tempItemNewsSubject.value = NewsSubjectItem()
+        tempType.value = -1
     }
 
     ModalBottomSheetLayout(
@@ -78,7 +79,13 @@ fun MainScreen() {
         // https://stackoverflow.com/a/68608137
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
-        sheetContent = { NewsDetails(newsItem = unit.value) },
+        sheetContent = {
+            when(tempType.value) {
+                0 -> NewsGlobalDetails(newsGlobalItem = tempItemNewsGlobal.value)
+                1 -> NewsSubjectDetails(newsSubjectItem = tempItemNewsSubject.value)
+                -1 -> Box() { Text("") }
+            }
+        }
     ) {
         Scaffold(
             topBar = {
@@ -93,8 +100,14 @@ fun MainScreen() {
                     navController = navController,
                     padding = contentPadding,
                     mainViewModel = mainViewModel,
-                    newsItemReceived = {
-                        unit.value = it
+                    newsGlobalItemReceived = {
+                        tempItemNewsGlobal.value = it
+                        tempType.value = 0
+                        scope.launch { sheetState.show() }
+                    },
+                    newsSubjectItemReceived = {
+                        tempItemNewsSubject.value = it
+                        tempType.value = 1
                         scope.launch { sheetState.show() }
                     }
                 )
@@ -108,7 +121,8 @@ fun NavigationHost(
     navController: NavHostController,
     padding: PaddingValues,
     mainViewModel: MainViewModel,
-    newsItemReceived: (NewsItem) -> Unit
+    newsGlobalItemReceived: (NewsGlobalItem) -> Unit,
+    newsSubjectItemReceived: (NewsSubjectItem) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -122,7 +136,8 @@ fun NavigationHost(
         composable(NavRoutes.News.route) {
             News(
                 mainViewModel = mainViewModel,
-                newsItemReceived = { newsItemReceived(it) }
+                newsGlobalItemReceived = { newsGlobalItemReceived(it) },
+                newsSubjectItemReceived = { newsSubjectItemReceived(it) }
             )
         }
 
