@@ -9,12 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
+import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -28,7 +31,10 @@ fun News(
     newsSubjectItemReceived: (NewsSubjectItem) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        val tabTitles = listOf("News Global", "News Subjects")
+        val tabTitles = listOf(
+            stringResource(id = R.string.navnews_navtab_newsglobal),
+            stringResource(id = R.string.navnews_navtab_newssubject)
+        )
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
 

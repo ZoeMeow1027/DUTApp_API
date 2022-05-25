@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -23,6 +24,7 @@ import io.zoemeow.dutapp.model.SubjectFeeListItem
 import io.zoemeow.dutapp.model.SubjectScheduleItem
 import io.zoemeow.dutapp.model.SubjectScheduleListItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
+import io.zoemeow.dutapp.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
@@ -101,8 +103,7 @@ fun SubjectsLoadingScreen() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Text("Loading data from server.")
-        Text("Please wait...")
+        Text("Loading data from server\nPlease wait...")
     }
 }
 
@@ -115,11 +116,11 @@ fun SubjectsNotLoggedIn() {
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "You are not logged in",
+            text = stringResource(id = R.string.navsubject_notloggedin_text1),
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = "To see your subjects schedule, sign in at \"Account\" tab.",
+            text = stringResource(id = R.string.navsubject_notloggedin_text2),
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -141,7 +142,11 @@ fun SubjectStudyItem(item: SubjectScheduleItem) {
         Text("${item.ScheduleStudy}")
         Text("${item.Weeks}")
         if (item.DateExam != null)
-            Text(getDateString(item.DateExam, "dd/MM/yyyy HH:mm", "GMT+7"))
+            Text(getDateString(
+                item.DateExam,
+                stringResource(id = R.string.navsubject_subject_datetimeformat),
+                "GMT+7")
+            )
     }
 }
 

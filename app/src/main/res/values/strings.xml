@@ -1,4 +1,28 @@
 <resources>
     <string name="app_name">DUT</string>
     <string name="topbar_name">DUT App for Android (alpha)</string>
+
+    <!-- News page -->
+    <string name="navnews_navtab_newsglobal">News global</string>
+    <string name="navnews_navtab_newssubject">News subject</string>
+
+    <!-- News details page -->
+    <string name="newsdetails_swipeorclickabovetoexit">(Swipe bottom or click empty space above this to exit)</string>
+
+    <!-- News subject page -->
+    <string name="navsubject_notloggedin_text1">You are not logged in</string>
+    <string name="navsubject_notloggedin_text2">To see your subjects schedule, sign in at "Account" tab.</string>
+    <string name="navsubject_subject_datetimeformat">dd/MM/yyyy HH:mm</string>
+
+    <!-- Login page -->
+    <string name="navlogin_screennotloggedin_text1">You are not logged in.</string>
+    <string name="navlogin_screennotloggedin_text2">Login to access more features, just for you :).</string>
+    <string name="navlogin_screennotloggedin_btnlogin">Login</string>
+    <string name="navlogin_screenlogin_title">Login</string>
+    <string name="navlogin_screenlogin_username">Username</string>
+    <string name="navlogin_screenlogin_password">Password</string>
+    <string name="navlogin_screenlogin_btnlogin">Login</string>
+    <string name="navlogin_screenlogin_btncancel">Cancel</string>
+    <string name="navlogin_screenlogin_loginfailed">"Logging in failed! Check your account and try again."</string>
+    <string name="navlogin_loggedin_btnlogout">Logout</string>
 </resources>
