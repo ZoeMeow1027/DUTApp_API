@@ -141,11 +141,12 @@ fun AccountPageLogin(
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
                     Spacer(modifier = Modifier.size(5.dp))
-                    Text(stringResource(id = R.string.navlogin_screenlogin_title), style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        text = stringResource(id = R.string.navlogin_screenlogin_title),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
                     OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         value = user.value,
                         label = { Text(stringResource(id = R.string.navlogin_screenlogin_username)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -156,9 +157,7 @@ fun AccountPageLogin(
                         enabled = enabledControls.value,
                     )
                     OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                             .focusRequester(passTextFieldFocusRequester),
                         value = pass.value,
                         label = { Text(stringResource(id = R.string.navlogin_screenlogin_password)) },
@@ -172,9 +171,7 @@ fun AccountPageLogin(
                         enabled = enabledControls.value,
                     )
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Button(
