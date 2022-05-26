@@ -1,0 +1,36 @@
+package io.zoemeow.dutapp.model
+
+import com.google.gson.annotations.SerializedName
+
+data class AccountInformationItem(
+    val name: String? = null,
+    val dateofbirth: String? = null,
+    val birthplace: String? = null,
+    val gender: String? = null,
+    val ethnicity: String? = null,
+    val nationality: String? = null,
+    val nationalidcard: String? = null,
+    val nationalidcardissuedate: String? = null,
+    val nationalidcardissueplace: String? = null,
+    val citizenidcard: String? = null,
+    val citizenidcardissuedate: String? = null,
+    @SerializedName("Religion") val religion: String? = null,
+    val accountbankid: String? = null,
+    val accountbankname: String? = null,
+    val hiid: String? = null,
+    val hiexpiredate: String? = null,
+    val specialization: String? = null,
+    @SerializedName("class") val schoolClass: String? = null,
+    val trainingprogramplan: String? = null,
+    val trainingprogramplan2: String? = null,
+    val schoolemail: String? = null,
+    val personalemail: String? = null,
+    val schoolemailinitpass: String? = null,
+    val facebookUrl: String? = null,
+    val phoneNumber: String? = null,
+    val address: String? = null,
+    val addressfrom: String? = null,
+    val addresscity: String? = null,
+    val addressdistrict: String? = null,
+    val addresssubdistrict: String? = null,
+)
