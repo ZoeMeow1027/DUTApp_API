@@ -1,18 +1,21 @@
 <resources>
     <string name="app_name">DUT</string>
     <string name="topbar_name">DUT App for Android (alpha)</string>
+    <string name="text_loading">Loading data from server\nPlease wait…</string>
 
     <!-- News page -->
-    <string name="navnews_navtab_newsglobal">News global</string>
-    <string name="navnews_navtab_newssubject">News subject</string>
+    <string name="navnews_navtab_newsglobal">News Global</string>
+    <string name="navnews_navtab_newssubject">News Subject</string>
 
     <!-- News details page -->
     <string name="newsdetails_swipeorclickabovetoexit">(Swipe bottom or click empty space above this to exit)</string>
 
     <!-- News subject page -->
     <string name="navsubject_notloggedin_text1">You are not logged in</string>
-    <string name="navsubject_notloggedin_text2">To see your subjects schedule, sign in at "Account" tab.</string>
+    <string name="navsubject_notloggedin_text2">To see your subjects schedule, sign in at \"Account\" tab.</string>
     <string name="navsubject_subject_datetimeformat">dd/MM/yyyy HH:mm</string>
+    <string name="navsubject_navtab_subjectschedule">Subjects Schedule</string>
+    <string name="navsubject_navtab_subjectfee">Subjects Fee</string>
 
     <!-- Login page -->
     <string name="navlogin_screennotloggedin_text1">You are not logged in.</string>
@@ -23,6 +26,6 @@
     <string name="navlogin_screenlogin_password">Password</string>
     <string name="navlogin_screenlogin_btnlogin">Login</string>
     <string name="navlogin_screenlogin_btncancel">Cancel</string>
-    <string name="navlogin_screenlogin_loginfailed">"Logging in failed! Check your account and try again."</string>
+    <string name="navlogin_screenlogin_loginfailed">Log in failed! Check your account and try again.</string>
     <string name="navlogin_loggedin_btnlogout">Logout</string>
 </resources>

@@ -31,7 +31,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
     if (mainViewModel.isLoggedIn()) {
-        val tabTitles = listOf("Subjects Schedule", "Subjects Fee")
+        val tabTitles = listOf(
+            stringResource(id = R.string.navsubject_navtab_subjectschedule),
+            stringResource(id = R.string.navsubject_navtab_subjectfee)
+        )
         val pagerState = rememberPagerState(initialPage = 0)
         val scope = rememberCoroutineScope()
 
@@ -74,36 +77,13 @@ fun Subjects(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
-    if (subjectListItem.schedulelist != null) {
-        LazyColumn() {
-            items(subjectListItem.schedulelist) {
-                    item -> SubjectStudyItem(item = item)
-            }
-        }
-    }
-}
-
-@Composable
-fun SubjectsFee(subjectFeeListItem: SubjectFeeListItem) {
-    if (subjectFeeListItem.feelist != null) {
-        LazyColumn() {
-            items(subjectFeeListItem.feelist) {
-                    item -> SubjectsFeeItem(item)
-            }
-        }
-    }
-}
-
-@Composable
 fun SubjectsLoadingScreen() {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text("Loading data from server\nPlease wait...")
+        Text(stringResource(id = R.string.text_loading))
     }
 }
 
@@ -127,10 +107,31 @@ fun SubjectsNotLoggedIn() {
 }
 
 @Composable
+fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
+    if (subjectListItem.schedulelist != null) {
+        LazyColumn() {
+            items(subjectListItem.schedulelist) {
+                    item -> SubjectStudyItem(item = item)
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectsFee(subjectFeeListItem: SubjectFeeListItem) {
+    if (subjectFeeListItem.feelist != null) {
+        LazyColumn() {
+            items(subjectFeeListItem.feelist) {
+                    item -> SubjectsFeeItem(item)
+            }
+        }
+    }
+}
+
+@Composable
 fun SubjectStudyItem(item: SubjectScheduleItem) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
             .padding(top = 5.dp, bottom = 5.dp)
             // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
             .clip(RoundedCornerShape(10.dp))
