@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -23,6 +20,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.zoemeow.dutapp.R
+import io.zoemeow.dutapp.model.AccountInformationItem
+import io.zoemeow.dutapp.model.AccountInformationMainItem
 import io.zoemeow.dutapp.navbar.NavLoginRoutes
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -63,7 +62,9 @@ fun AccountNavigationHost(mainViewModel: MainViewModel, navController: NavHostCo
 
         composable(NavLoginRoutes.AccountPageLoggedIn.route) {
             mainViewModel.getSubjectScheduleAndFee(21, 2, false)
+            mainViewModel.getAccountInformation()
             AccountPageLoggedIn(
+                mainViewModel.dataAccInfo,
                 logout = {
                     mainViewModel.logout()
                     navController.navigate(NavLoginRoutes.AccountPageNotLoggedIn.route) {
@@ -227,11 +228,20 @@ fun AccountCheckLogin(
 }
 
 @Composable
-fun AccountPageLoggedIn(logout: () -> Unit) {
+fun AccountPageLoggedIn(accInfo: MutableState<AccountInformationMainItem>, logout: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
+        if (accInfo.value.accountinfo != null) {
+            Text("Name: ${accInfo.value.accountinfo!!.name ?: String()}")
+            Text("Specialization: ${accInfo.value.accountinfo!!.specialization ?: String()}")
+            Text("Class: ${accInfo.value.accountinfo!!.schoolClass ?: String()}")
+            Text("School email: ${accInfo.value.accountinfo!!.schoolemail ?: String()}")
+            Text("Personal email: ${accInfo.value.accountinfo!!.personalemail ?: String()}")
+            Text("Facebook URL: ${accInfo.value.accountinfo!!.facebookUrl ?: String()}")
+            Text("Phone number: ${accInfo.value.accountinfo!!.phoneNumber ?: String()}")
+        }
         Button(
             onClick = logout
         ) {

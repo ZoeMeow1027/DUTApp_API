@@ -43,4 +43,9 @@ interface DutFuncApi {
         @Query(value = "semester") semester: Int,
         @Query(value = "insummer") insummer: Int
     ): SubjectFeeListItem
+
+    @POST("/account?type=accinfo")
+    suspend fun dutGetAccInfo(
+        @Query(value = "sid") sid: String
+    ): AccountInformationMainItem
 }

@@ -26,12 +26,15 @@ class MainViewModel @Inject constructor(
     fun refreshNewsGlobalFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
+//                if (procGlobal.value)
+//                    throw Exception("Another process is running!")
                 procGlobal.value = true
+
                 dataGlobal.value = dutNewsRepo.getNewsGlobal(page)
-            } catch (_: Exception) {
-
             }
-
+            catch (ex: Exception) {
+                Log.d("NewsGlobal", ex.message.toString())
+            }
             procGlobal.value = false
         }
     }
@@ -45,13 +48,15 @@ class MainViewModel @Inject constructor(
     fun refreshNewsSubjectsFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
+//                if (procSubjects.value)
+//                    throw Exception("Another process is running!")
                 procSubjects.value = true
-                dataSubjects.value = dutNewsRepo.getNewsSubject(page)
-            } catch (ex: Exception) {
-                if (ex != null)
-                    Log.d("DutNewsRepo", ex?.message.toString())
-            }
 
+                dataSubjects.value = dutNewsRepo.getNewsSubject(page)
+            }
+            catch (ex: Exception) {
+                Log.d("NewsSubject", ex.message.toString())
+            }
             procSubjects.value = false
         }
     }
@@ -64,25 +69,47 @@ class MainViewModel @Inject constructor(
     }
     fun login(user: String, pass: String, rememberLogin: Boolean = false) {
         viewModelScope.launch {
-            procAccount.value = true
-            val result = dutAccRepo.dutLogin(user, pass)
-            if (result.loggedin) {
-                sessionId.value = result.sessionid!!
+            try {
+//                if (procAccount.value)
+//                    throw Exception("Another process is running!")
+                procAccount.value = true
+
+                val result = dutAccRepo.dutLogin(user, pass)
+                if (result.loggedin)
+                    sessionId.value = result.sessionid!!
+            }
+            catch (ex: Exception) {
+                Log.d("Login", ex.message.toString())
             }
             procAccount.value = false
         }
     }
     fun logout() {
         viewModelScope.launch {
-            procAccount.value = true
-            val temp = sessionId.value
-            sessionId.value = String()
-            dutAccRepo.dutLogout(temp)
+            try {
+//                procAccount.value = false
+//                if (procAccount.value)
+//                    throw Exception("Another process is running!")
+                procAccount.value = true
+
+                val temp = sessionId.value
+                dutAccRepo.dutLogout(temp)
+                resetAccountVariable()
+            }
+            catch (ex: Exception) {
+                Log.d("Logout", ex.message.toString())
+            }
             procAccount.value = false
         }
     }
     fun isLoggedIn(): Boolean {
         return (if (sessionId.value == null) false else sessionId.value.isNotEmpty())
+    }
+    private fun resetAccountVariable() {
+        sessionId.value = String()
+        dataSubjectSchedule.value = SubjectScheduleListItem()
+        dataSubjectFee.value = SubjectFeeListItem()
+        dataAccInfo.value = AccountInformationMainItem()
     }
 
     // Get subject schedule and subject fee
@@ -91,12 +118,33 @@ class MainViewModel @Inject constructor(
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
+//                if (procAccount.value)
+//                    throw Exception("Another process is running!")
                 procAccount.value = true
+
                 dataSubjectSchedule.value = dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
                 dataSubjectFee.value = dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
-            } catch (ex: Exception) {
-                if (ex != null)
-                    Log.d("DutNewsRepo", ex?.message.toString())
+            }
+            catch (ex: Exception) {
+                Log.d("SubjectScheduleFee", ex.message.toString())
+            }
+            procAccount.value = false
+        }
+    }
+
+    // Get account information
+    val dataAccInfo: MutableState<AccountInformationMainItem> = mutableStateOf(AccountInformationMainItem())
+    fun getAccountInformation() {
+        viewModelScope.launch {
+            try {
+//                if (procAccount.value)
+//                    throw Exception("Another process is running!")
+                procAccount.value = true
+
+                dataAccInfo.value = dutAccRepo.dutGetAccInfo(sessionId.value)
+            }
+            catch (ex: Exception) {
+                Log.d("AccInfo", ex.message.toString())
             }
             procAccount.value = false
         }
