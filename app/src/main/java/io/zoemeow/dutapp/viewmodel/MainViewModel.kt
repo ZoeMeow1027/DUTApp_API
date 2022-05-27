@@ -6,20 +6,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.zoemeow.dutapp.data.AccountDataWithCache
-import io.zoemeow.dutapp.data.ExceptionWithCache
-import io.zoemeow.dutapp.data.NewsDataWithCache
-import io.zoemeow.dutapp.data.NewsDetailsClicked
+import io.zoemeow.dutapp.data.*
 import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.repository.DutAccountRepository
 import io.zoemeow.dutapp.repository.DutNewsRepository
 import kotlinx.coroutines.launch
+import java.math.BigInteger
+import java.security.MessageDigest
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
-    private val dutAccRepo: DutAccountRepository
+    private val dutAccRepo: DutAccountRepository,
+    private val dutNewsGlobalCacheRepo: NewsGlobalCacheRepository
 ) : ViewModel() {
     // Exception will be saved here.
     private val exceptionWithCache: MutableState<ExceptionWithCache> = mutableStateOf(ExceptionWithCache())
@@ -36,6 +36,11 @@ class MainViewModel @Inject constructor(
     val newsData: MutableState<NewsDataWithCache>
         get() = newsDataWithCache
 
+    private fun md5(input: String): String {
+        val md = MessageDigest.getInstance("MD5")
+        return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+    }
+
     // Get news global.
     private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingNewsGlobal(): MutableState<Boolean> { return procGlobal }
@@ -44,8 +49,19 @@ class MainViewModel @Inject constructor(
             try {
                 procGlobal.value = true
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
-                if (dataGlobalFromInternet.newslist != null)
+                if (dataGlobalFromInternet.newslist != null) {
                     newsDataWithCache.value.NewsGlobalData.value = dataGlobalFromInternet.newslist
+
+                    for (newsItem: NewsGlobalItem in newsDataWithCache.value.NewsGlobalData.value) {
+                        dutNewsGlobalCacheRepo.insertNews(NewsGlobalItem(
+                            date = newsItem.date,
+                            title = newsItem.title,
+                            contentText = newsItem.contentText,
+                            links = ArrayList<LinkItem>(newsItem.links),
+                            id = md5("${newsItem.date}-${newsItem.title}")
+                        ))
+                    }
+                }
             }
             catch (ex: Exception) {
                 exceptionWithCache.value.addException(ex)

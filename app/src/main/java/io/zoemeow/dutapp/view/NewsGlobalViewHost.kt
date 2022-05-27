@@ -103,7 +103,7 @@ fun NewsGlobalLoadList(
                     )
                     Spacer(modifier = Modifier.size(5.dp))
                     Text(
-                        text = item.contenttext!!,
+                        text = item.contentText!!,
                         style = MaterialTheme.typography.bodyMedium,
                         // https://stackoverflow.com/a/65736376
                         maxLines = 2,
@@ -142,14 +142,14 @@ fun NewsGlobalDetails(newsGlobalItem: NewsGlobalItem) {
             )
             Spacer(modifier = Modifier.size(15.dp))
             val annotatedString = buildAnnotatedString {
-                if (newsGlobalItem.contenttext != null) {
+                if (newsGlobalItem.contentText != null) {
                     // Parse all string to annotated string.
-                    append(newsGlobalItem.contenttext)
+                    append(newsGlobalItem.contentText!!)
                     // Adjust color for annotated string to follow system mode.
                     addStyle(
                         style = SpanStyle(color = if (isSystemInDarkTheme()) Color.White else Color.Black),
                         start = 0,
-                        end = newsGlobalItem.contenttext.length
+                        end = newsGlobalItem.contentText!!.length
                     )
                     // Adjust for detected link.
                     newsGlobalItem.links?.forEach {
