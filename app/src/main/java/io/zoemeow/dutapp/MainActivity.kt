@@ -2,6 +2,8 @@ package io.zoemeow.dutapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -25,8 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.zoemeow.dutapp.model.NewsGlobalItem
-import io.zoemeow.dutapp.model.NewsSubjectItem
+import io.zoemeow.dutapp.data.NewsDetailsClicked
 import io.zoemeow.dutapp.navbar.NavBarItemObject
 import io.zoemeow.dutapp.navbar.NavRoutes
 import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
@@ -52,10 +55,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterialApi::class,
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -64,14 +64,22 @@ fun MainScreen() {
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
 
-    val tempType = remember { mutableStateOf(-1) }
-    val tempItemNewsGlobal: MutableState<NewsGlobalItem> = remember { mutableStateOf(NewsGlobalItem()) }
-    val tempItemNewsSubject: MutableState<NewsSubjectItem> = remember { mutableStateOf(NewsSubjectItem()) }
+    mainViewModel.newsDetailsClicked.value = NewsDetailsClicked(
+        showSheetRequested = {
+            scope.launch { sheetState.show() }
+        },
+        hideSheetRequested = {
+            scope.launch { sheetState.hide() }
+        }
+    )
 
-    if (!sheetState.isVisible) {
-        tempItemNewsGlobal.value = NewsGlobalItem()
-        tempItemNewsSubject.value = NewsSubjectItem()
-        tempType.value = -1
+    // https://stackoverflow.com/a/69052933
+    LaunchedEffect(Unit) {
+        snapshotFlow { sheetState.currentValue }
+            .collect {
+                if (it == ModalBottomSheetValue.Hidden)
+                    mainViewModel.newsDetailsClicked.value?.clearViewDetails()
+            }
     }
 
     ModalBottomSheetLayout(
@@ -80,10 +88,14 @@ fun MainScreen() {
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
         sheetContent = {
-            when(tempType.value) {
-                0 -> NewsGlobalDetails(newsGlobalItem = tempItemNewsGlobal.value)
-                1 -> NewsSubjectDetails(newsSubjectItem = tempItemNewsSubject.value)
-                -1 -> Box() { Text("") }
+            when(mainViewModel.newsDetailsClicked.value!!.NewsType.value) {
+                0 -> NewsGlobalDetails(
+                    newsGlobalItem = mainViewModel.newsDetailsClicked.value!!.newsGlobal.value
+                )
+                1 -> NewsSubjectDetails(
+                    newsSubjectItem = mainViewModel.newsDetailsClicked.value!!.newsSubject.value
+                )
+                -1 -> Box { Text("") }
             }
         }
     ) {
@@ -99,17 +111,7 @@ fun MainScreen() {
                 NavigationHost(
                     navController = navController,
                     padding = contentPadding,
-                    mainViewModel = mainViewModel,
-                    newsGlobalItemReceived = {
-                        tempItemNewsGlobal.value = it
-                        tempType.value = 0
-                        scope.launch { sheetState.show() }
-                    },
-                    newsSubjectItemReceived = {
-                        tempItemNewsSubject.value = it
-                        tempType.value = 1
-                        scope.launch { sheetState.show() }
-                    }
+                    mainViewModel = mainViewModel
                 )
             }
         )
@@ -121,8 +123,6 @@ fun NavigationHost(
     navController: NavHostController,
     padding: PaddingValues,
     mainViewModel: MainViewModel,
-    newsGlobalItemReceived: (NewsGlobalItem) -> Unit,
-    newsSubjectItemReceived: (NewsSubjectItem) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -134,23 +134,32 @@ fun NavigationHost(
         }
 
         composable(NavRoutes.News.route) {
-            News(
-                mainViewModel = mainViewModel,
-                newsGlobalItemReceived = { newsGlobalItemReceived(it) },
-                newsSubjectItemReceived = { newsSubjectItemReceived(it) }
+            // If sheet still display, hide them
+            // else will return to main screen.
+            // https://stackoverflow.com/a/70376447
+            BackHandler(
+                enabled = (mainViewModel.newsDetailsClicked.value!!.NewsType.value != -1),
+                onBack = { mainViewModel.newsDetailsClicked.value!!.hideViewDetails() },
             )
+            News(mainViewModel = mainViewModel)
         }
 
         composable(NavRoutes.Subject.route) {
-            Subjects(
-                mainViewModel = mainViewModel,
-            )
+            Subjects(mainViewModel = mainViewModel)
         }
 
         composable(NavRoutes.Account.route) {
-            Account(
-                mainViewModel = mainViewModel
+            // If still in Login, roll back to Not Logged In,
+            // else will return to main screen.
+            // https://stackoverflow.com/a/70376447
+            BackHandler(
+                enabled = (mainViewModel.accountPaneIndex.value == 1),
+                onBack = {
+                    if (mainViewModel.accountPaneIndex.value == 1)
+                        mainViewModel.accountPaneIndex.value = 0
+                }
             )
+            Account(mainViewModel = mainViewModel)
         }
     }
 }
@@ -184,11 +193,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                 label = {
                     Text(
                         text = navItem.title,
-                        style = (
-                                if (currentRoute == navItem.route)
-                                    MaterialTheme.typography.titleMedium
-                                else MaterialTheme.typography.titleSmall
-                                )
+                        style = MaterialTheme.typography.titleSmall
                     )
                 },
             )

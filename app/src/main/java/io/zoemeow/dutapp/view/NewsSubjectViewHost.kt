@@ -28,16 +28,16 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.model.NewsGlobalListItem
+import io.zoemeow.dutapp.data.NewsDataWithCache
+import io.zoemeow.dutapp.data.NewsDetailsClicked
 import io.zoemeow.dutapp.model.NewsSubjectItem
-import io.zoemeow.dutapp.model.NewsSubjectListItem
 
 @Composable
 fun NewsSubjectViewHost(
+    newsDetailsClicked: MutableState<NewsDetailsClicked?>,
     isLoading: MutableState<Boolean>,
-    data: MutableState<NewsSubjectListItem>,
+    data: MutableState<NewsDataWithCache>,
     refreshRequired: () -> Unit,
-    newsSubjectItemReceived: (NewsSubjectItem) -> Unit
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
     SwipeRefresh(
@@ -45,39 +45,38 @@ fun NewsSubjectViewHost(
         onRefresh = {
             swipeRefreshState.isRefreshing = true
             refreshRequired()
-        },
-        content = {
-            if (data.value.newslist == null) {
-                swipeRefreshState.isRefreshing = isLoading.value
+        }
+    ) {
+        if (data.value.NewsSubjectData.value.size == 0) {
+            swipeRefreshState.isRefreshing = isLoading.value
 
-                val loadingText = arrayOf("Loading data from server\nPlease wait...")
-                val errorText = arrayOf("Nothing")
-                LazyColumn(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(if (isLoading.value) loadingText else errorText) {
-                            item -> Text(item)
-                    }
+            val loadingText = arrayOf(stringResource(id = R.string.text_loading))
+            val errorText = arrayOf("Nothing")
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(if (isLoading.value) loadingText else errorText) {
+                        item -> Text(item)
                 }
             }
-            else {
-                swipeRefreshState.isRefreshing = false
-                NewsSubjectLoadList(
-                    data.value.newslist!!,
-                    newsItemReceived = { item -> newsSubjectItemReceived(item) }
-                )
-            }
         }
-    )
+        else {
+            swipeRefreshState.isRefreshing = false
+            NewsSubjectLoadList(
+                newsDetailsClicked = newsDetailsClicked,
+                data.value.NewsSubjectData.value,
+            )
+        }
+    }
 }
 
 // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
 @Composable
 fun NewsSubjectLoadList(
-    newsList: List<NewsSubjectItem>,
-    newsItemReceived: (NewsSubjectItem) -> Unit
+    newsDetailsClicked: MutableState<NewsDetailsClicked?>,
+    newsList: ArrayList<NewsSubjectItem>,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp),
@@ -91,13 +90,12 @@ fun NewsSubjectLoadList(
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(top = 10.dp, bottom = 10.dp)
-                    .clickable { newsItemReceived(item) },
+                    .clickable { newsDetailsClicked.value?.setViewDetailsNewsSubject(item) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(start = 15.dp, end = 15.dp)
+                    modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)
                 ) {
                     Text(
                         text = item.title!!,
@@ -107,8 +105,8 @@ fun NewsSubjectLoadList(
                     Text(
                         text = item.contenttext!!,
                         style = MaterialTheme.typography.bodyMedium,
+                        // https://stackoverflow.com/a/65736376
                         maxLines = 2,
-                        // https://stackoverflow.com/questions/65736375/how-to-show-ellipsis-three-dots-at-the-end-of-a-text-line-in-android-jetpack-c
                         overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(modifier = Modifier.size(20.dp))
@@ -125,7 +123,9 @@ fun NewsSubjectLoadList(
 @Composable
 fun NewsSubjectDetails(newsSubjectItem: NewsSubjectItem) {
     Box(
-        modifier = Modifier.padding(20.dp).background(MaterialTheme.colorScheme.onSecondary)
+        modifier = Modifier
+            .padding(20.dp)
+            .background(MaterialTheme.colorScheme.onSecondary)
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
