@@ -6,6 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.zoemeow.dutapp.data.AccountDataWithCache
+import io.zoemeow.dutapp.data.ExceptionWithCache
+import io.zoemeow.dutapp.data.NewsDataWithCache
+import io.zoemeow.dutapp.data.NewsDetailsClicked
 import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.repository.DutAccountRepository
 import io.zoemeow.dutapp.repository.DutNewsRepository
@@ -17,22 +21,34 @@ class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
     private val dutAccRepo: DutAccountRepository
 ) : ViewModel() {
-    // Get news global
+    // Exception will be saved here.
+    private val exceptionWithCache: MutableState<ExceptionWithCache> = mutableStateOf(ExceptionWithCache())
+
+    // News View.
+    val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
+
+    // Account View.
+    // 0: Not logged in, 1: Login, 2: Logged In
+    val accountPaneIndex = mutableStateOf(0)
+
+    // Get news.
+    private val newsDataWithCache: MutableState<NewsDataWithCache> = mutableStateOf(NewsDataWithCache())
+    val newsData: MutableState<NewsDataWithCache>
+        get() = newsDataWithCache
+
+    // Get news global.
     private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
-    fun isProcessingNewsGlobal(): MutableState<Boolean> {
-        return procGlobal
-    }
-    val dataGlobal: MutableState<NewsGlobalListItem> = mutableStateOf(NewsGlobalListItem())
+    fun isProcessingNewsGlobal(): MutableState<Boolean> { return procGlobal }
     fun refreshNewsGlobalFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
-//                if (procGlobal.value)
-//                    throw Exception("Another process is running!")
                 procGlobal.value = true
-
-                dataGlobal.value = dutNewsRepo.getNewsGlobal(page)
+                val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
+                if (dataGlobalFromInternet.newslist != null)
+                    newsDataWithCache.value.NewsGlobalData.value = dataGlobalFromInternet.newslist
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("NewsGlobal", ex.message.toString())
             }
             procGlobal.value = false
@@ -41,28 +57,31 @@ class MainViewModel @Inject constructor(
 
     // Get news subjects
     private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
-    fun isProcessingNewsSubject(): MutableState<Boolean> {
-        return procSubjects
-    }
-    val dataSubjects: MutableState<NewsSubjectListItem> = mutableStateOf(NewsSubjectListItem())
+    fun isProcessingNewsSubject(): MutableState<Boolean> { return procSubjects }
     fun refreshNewsSubjectsFromServer(page: Int = 1) {
         viewModelScope.launch {
             try {
-//                if (procSubjects.value)
-//                    throw Exception("Another process is running!")
                 procSubjects.value = true
-
-                dataSubjects.value = dutNewsRepo.getNewsSubject(page)
+                val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
+                if (dataSubjectsFromInternet.newslist != null)
+                    newsDataWithCache.value.NewsSubjectData.value = dataSubjectsFromInternet.newslist
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("NewsSubject", ex.message.toString())
             }
             procSubjects.value = false
         }
     }
 
+    // Account Information
+    private val accDataWithCache: MutableState<AccountDataWithCache> = mutableStateOf(
+        AccountDataWithCache()
+    )
+    val accountData: MutableState<AccountDataWithCache>
+        get() = accDataWithCache
+
     // Login/logout
-    private val sessionId: MutableState<String> = mutableStateOf(String())
     private val procAccount: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingAccount(): MutableState<Boolean> {
         return procAccount
@@ -70,15 +89,14 @@ class MainViewModel @Inject constructor(
     fun login(user: String, pass: String, rememberLogin: Boolean = false) {
         viewModelScope.launch {
             try {
-//                if (procAccount.value)
-//                    throw Exception("Another process is running!")
                 procAccount.value = true
 
                 val result = dutAccRepo.dutLogin(user, pass)
                 if (result.loggedin)
-                    sessionId.value = result.sessionid!!
+                    accDataWithCache.value.SessionID.value = result.sessionid!!
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("Login", ex.message.toString())
             }
             procAccount.value = false
@@ -87,45 +105,43 @@ class MainViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             try {
-//                procAccount.value = false
-//                if (procAccount.value)
-//                    throw Exception("Another process is running!")
                 procAccount.value = true
 
-                val temp = sessionId.value
+                val temp = accDataWithCache.value.SessionID.value
+                accDataWithCache.value.clearAllData()
                 dutAccRepo.dutLogout(temp)
-                resetAccountVariable()
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("Logout", ex.message.toString())
             }
             procAccount.value = false
         }
     }
     fun isLoggedIn(): Boolean {
-        return (if (sessionId.value == null) false else sessionId.value.isNotEmpty())
-    }
-    private fun resetAccountVariable() {
-        sessionId.value = String()
-        dataSubjectSchedule.value = SubjectScheduleListItem()
-        dataSubjectFee.value = SubjectFeeListItem()
-        dataAccInfo.value = AccountInformationMainItem()
+        return (accDataWithCache.value.isStoringSessionID())
     }
 
     // Get subject schedule and subject fee
-    val dataSubjectSchedule: MutableState<SubjectScheduleListItem> = mutableStateOf(SubjectScheduleListItem())
-    val dataSubjectFee: MutableState<SubjectFeeListItem> = mutableStateOf(SubjectFeeListItem())
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
-//                if (procAccount.value)
-//                    throw Exception("Another process is running!")
                 procAccount.value = true
 
-                dataSubjectSchedule.value = dutAccRepo.dutGetSubjectSchedule(sessionId.value, year, semester, inSummer)
-                dataSubjectFee.value = dutAccRepo.dutGetSubjectFee(sessionId.value, year, semester, inSummer)
+                val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
+                    accDataWithCache.value.SessionID.value, year, semester, inSummer)
+                if (dataSubjectScheduleFromInternet.schedulelist != null &&
+                        dataSubjectScheduleFromInternet.schedulelist.size > 0)
+                    accDataWithCache.value.SubjectScheduleData.value = dataSubjectScheduleFromInternet.schedulelist
+
+                val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
+                    accDataWithCache.value.SessionID.value, year, semester, inSummer)
+                if (dataSubjectFeeFromInternet.feelist != null &&
+                        dataSubjectFeeFromInternet.feelist.size > 0)
+                    accDataWithCache.value.SubjectFeeData.value = dataSubjectFeeFromInternet.feelist
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("SubjectScheduleFee", ex.message.toString())
             }
             procAccount.value = false
@@ -133,17 +149,18 @@ class MainViewModel @Inject constructor(
     }
 
     // Get account information
-    val dataAccInfo: MutableState<AccountInformationMainItem> = mutableStateOf(AccountInformationMainItem())
     fun getAccountInformation() {
         viewModelScope.launch {
             try {
-//                if (procAccount.value)
-//                    throw Exception("Another process is running!")
                 procAccount.value = true
 
-                dataAccInfo.value = dutAccRepo.dutGetAccInfo(sessionId.value)
+                val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
+                    accDataWithCache.value.SessionID.value)
+                if (dataAccInfoFromInternet.accountinfo != null)
+                    accDataWithCache.value.AccountInformationData.value = dataAccInfoFromInternet.accountinfo
             }
             catch (ex: Exception) {
+                exceptionWithCache.value.addException(ex)
                 Log.d("AccInfo", ex.message.toString())
             }
             procAccount.value = false

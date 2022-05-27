@@ -19,12 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import io.zoemeow.dutapp.model.SubjectFeeItem
-import io.zoemeow.dutapp.model.SubjectFeeListItem
-import io.zoemeow.dutapp.model.SubjectScheduleItem
-import io.zoemeow.dutapp.model.SubjectScheduleListItem
-import io.zoemeow.dutapp.viewmodel.MainViewModel
 import io.zoemeow.dutapp.R
+import io.zoemeow.dutapp.model.SubjectFeeItem
+import io.zoemeow.dutapp.model.SubjectScheduleItem
+import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
@@ -63,12 +61,12 @@ fun Subjects(mainViewModel: MainViewModel) {
                     0 -> {
                         if (mainViewModel.isProcessingAccount().value)
                             SubjectsLoadingScreen()
-                        else SubjectsStudy(subjectListItem = mainViewModel.dataSubjectSchedule.value)
+                        else SubjectsStudy(subjectListItem = mainViewModel.accountData.value.SubjectScheduleData.value)
                     }
                     1 -> {
                         if (mainViewModel.isProcessingAccount().value)
                             SubjectsLoadingScreen()
-                        else SubjectsFee(subjectFeeListItem = mainViewModel.dataSubjectFee.value)
+                        else SubjectsFee(subjectListItem = mainViewModel.accountData.value.SubjectFeeData.value)
                     }
                 }
             }
@@ -107,10 +105,10 @@ fun SubjectsNotLoggedIn() {
 }
 
 @Composable
-fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
-    if (subjectListItem.schedulelist != null) {
-        LazyColumn() {
-            items(subjectListItem.schedulelist) {
+fun SubjectsStudy(subjectListItem: ArrayList<SubjectScheduleItem>) {
+    if (subjectListItem.size > 0) {
+        LazyColumn {
+            items(subjectListItem) {
                     item -> SubjectStudyItem(item = item)
             }
         }
@@ -118,10 +116,10 @@ fun SubjectsStudy(subjectListItem: SubjectScheduleListItem) {
 }
 
 @Composable
-fun SubjectsFee(subjectFeeListItem: SubjectFeeListItem) {
-    if (subjectFeeListItem.feelist != null) {
-        LazyColumn() {
-            items(subjectFeeListItem.feelist) {
+fun SubjectsFee(subjectListItem: ArrayList<SubjectFeeItem>) {
+    if (subjectListItem.size > 0) {
+        LazyColumn {
+            items(subjectListItem) {
                     item -> SubjectsFeeItem(item)
             }
         }

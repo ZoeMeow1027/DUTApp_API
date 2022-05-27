@@ -1,3 +1,8 @@
+[VS IDE & VS Code]
+.vs/*
+.vscode/*
+
+[Android]
 *.iml
 .gradle
 /local.properties

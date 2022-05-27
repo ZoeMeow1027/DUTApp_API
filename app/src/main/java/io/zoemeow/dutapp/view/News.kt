@@ -9,14 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import io.zoemeow.dutapp.model.NewsGlobalItem
-import io.zoemeow.dutapp.model.NewsSubjectItem
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -25,11 +22,7 @@ import java.util.*
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun News(
-    mainViewModel: MainViewModel,
-    newsGlobalItemReceived: (NewsGlobalItem) -> Unit,
-    newsSubjectItemReceived: (NewsSubjectItem) -> Unit
-) {
+fun News(mainViewModel: MainViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         val tabTitles = listOf(
             stringResource(id = R.string.navnews_navtab_newsglobal),
@@ -60,20 +53,16 @@ fun News(
             HorizontalPager(count = tabTitles.size, state = pagerState) { index ->
                 when (index) {
                     0 -> NewsGlobalViewHost(
+                        newsDetailsClicked = mainViewModel.newsDetailsClicked,
                         isLoading = mainViewModel.isProcessingNewsGlobal(),
-                        data = mainViewModel.dataGlobal,
-                        refreshRequired = {
-                            mainViewModel.refreshNewsGlobalFromServer()
-                        },
-                        newsGlobalItemReceived = { newsGlobalItemReceived(it) }
+                        data = mainViewModel.newsData,
+                        refreshRequired = { mainViewModel.refreshNewsGlobalFromServer() },
                     )
                     1 -> NewsSubjectViewHost(
+                        newsDetailsClicked = mainViewModel.newsDetailsClicked,
                         isLoading = mainViewModel.isProcessingNewsSubject(),
-                        data = mainViewModel.dataSubjects,
-                        refreshRequired = {
-                            mainViewModel.refreshNewsSubjectsFromServer()
-                        },
-                        newsSubjectItemReceived = { newsSubjectItemReceived(it) }
+                        data = mainViewModel.newsData,
+                        refreshRequired = { mainViewModel.refreshNewsSubjectsFromServer() },
                     )
                 }
             }
