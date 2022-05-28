@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.repository
+package io.zoemeow.dutapp.data.repository
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf

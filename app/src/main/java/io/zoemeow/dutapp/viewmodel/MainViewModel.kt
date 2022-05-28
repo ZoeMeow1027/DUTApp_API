@@ -8,9 +8,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.zoemeow.dutapp.data.*
 import io.zoemeow.dutapp.model.*
-import io.zoemeow.dutapp.repository.DutAccountRepository
-import io.zoemeow.dutapp.repository.DutNewsRepository
-import io.zoemeow.dutapp.repository.NewsCacheRepository
+import io.zoemeow.dutapp.data.repository.DutAccountRepository
+import io.zoemeow.dutapp.data.repository.DutNewsRepository
+import io.zoemeow.dutapp.data.repository.NewsCacheRepository
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -25,14 +25,14 @@ class MainViewModel @Inject constructor(
     // Exception will be saved here.
     private val exceptionWithCache: MutableState<ExceptionWithCache> = mutableStateOf(ExceptionWithCache())
 
-    // News View.
+    // News Details View when clicked a news.
     val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
 
     // Account View.
     // 0: Not logged in, 1: Login, 2: Logged In
     val accountPaneIndex = mutableStateOf(0)
 
-    // Get news.
+    // News data with cache (for easier manage).
     private val newsDataWithCache: MutableState<NewsDataWithCache> = mutableStateOf(NewsDataWithCache())
     val newsData: MutableState<NewsDataWithCache>
         get() = newsDataWithCache
@@ -71,18 +71,6 @@ class MainViewModel @Inject constructor(
             procGlobal.value = false
         }
     }
-    private fun getNewsCacheFromDb() {
-        viewModelScope.launch {
-            dutNewsCacheDbRepo.getAllNewsGlobal().collect {
-                list ->
-                newsDataWithCache.value.NewsGlobalData.value.addAll(list)
-            }
-            dutNewsCacheDbRepo.getAllNewsSubject().collect {
-                list ->
-                newsDataWithCache.value.NewsSubjectData.value.addAll(list)
-            }
-        }
-    }
 
     // Get news subjects
     private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
@@ -113,6 +101,21 @@ class MainViewModel @Inject constructor(
             procSubjects.value = false
         }
     }
+
+    // Get news cache from db.
+    private fun getNewsCacheFromDb() {
+        viewModelScope.launch {
+            dutNewsCacheDbRepo.getAllNewsGlobal().collect {
+                    list ->
+                newsDataWithCache.value.NewsGlobalData.value.addAll(list)
+            }
+            dutNewsCacheDbRepo.getAllNewsSubject().collect {
+                    list ->
+                newsDataWithCache.value.NewsSubjectData.value.addAll(list)
+            }
+        }
+    }
+
 
     // Account Information
     private val accDataWithCache: MutableState<AccountDataWithCache> = mutableStateOf(
