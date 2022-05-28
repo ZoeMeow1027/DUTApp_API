@@ -7,8 +7,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.zoemeow.dutapp.data.NewsGlobalCacheDatabase
+import io.zoemeow.dutapp.data.NewsCacheDatabase
 import io.zoemeow.dutapp.data.NewsGlobalCacheDatabaseDao
+import io.zoemeow.dutapp.data.NewsSubjectCacheDatabaseDao
 import io.zoemeow.dutapp.network.DutFuncApi
 import io.zoemeow.dutapp.repository.DutNewsRepository
 import retrofit2.Retrofit
@@ -32,20 +33,26 @@ object AppModule {
             .create(DutFuncApi::class.java)
     }
 
-    // Database for News global cache
+    // Database for News global cache and news subject cache
     @Provides
     @Singleton
-    fun provideNewsGlobalItemDao(newsDatabase: NewsGlobalCacheDatabase): NewsGlobalCacheDatabaseDao {
-        return newsDatabase.getDao()
+    fun provideNewsGlobalCacheDao(newsDatabase: NewsCacheDatabase): NewsGlobalCacheDatabaseDao {
+        return newsDatabase.getNewsGlobalDbDao()
     }
 
     @Provides
     @Singleton
-    fun provideNewsGlobalItemDatabase(@ApplicationContext context: Context): NewsGlobalCacheDatabase {
+    fun provideNewsSubjectCacheDao(newsDatabase: NewsCacheDatabase): NewsSubjectCacheDatabaseDao {
+        return newsDatabase.getNewsSubjectDbDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNewsCacheDatabase(@ApplicationContext context: Context): NewsCacheDatabase {
         return Room.databaseBuilder(
             context,
-            NewsGlobalCacheDatabase::class.java,
-            "newsGlobalCache"
+            NewsCacheDatabase::class.java,
+            "${context.cacheDir.path}/newsCache.db"
         ).fallbackToDestructiveMigration().build()
     }
 }

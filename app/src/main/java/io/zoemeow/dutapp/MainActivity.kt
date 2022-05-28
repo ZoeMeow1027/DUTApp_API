@@ -126,7 +126,7 @@ fun NavigationHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.Account.route,
+        startDestination = NavRoutes.News.route,
         modifier = Modifier.padding(padding)
     ) {
         composable(NavRoutes.Home.route) {

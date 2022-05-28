@@ -5,13 +5,15 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import io.zoemeow.dutapp.LinkItemConverter
 import io.zoemeow.dutapp.model.NewsGlobalItem
+import io.zoemeow.dutapp.model.NewsSubjectItem
 
 @Database(
-    entities = [NewsGlobalItem::class],
+    entities = [NewsGlobalItem::class, NewsSubjectItem::class],
     version = 1,
     exportSchema = false
 )
 @TypeConverters(LinkItemConverter::class)
-abstract class NewsGlobalCacheDatabase: RoomDatabase() {
-    abstract fun getDao(): NewsGlobalCacheDatabaseDao
+abstract class NewsCacheDatabase: RoomDatabase() {
+    abstract fun getNewsGlobalDbDao(): NewsGlobalCacheDatabaseDao
+    abstract fun getNewsSubjectDbDao(): NewsSubjectCacheDatabaseDao
 }

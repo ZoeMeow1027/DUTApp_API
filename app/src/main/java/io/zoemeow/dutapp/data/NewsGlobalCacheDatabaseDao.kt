@@ -7,20 +7,20 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NewsGlobalCacheDatabaseDao {
     @Query("SELECT * FROM newsGlobalCache")
-    fun getAllNewsGlobal(): Flow<List<NewsGlobalItem>>
+    fun getAllNews(): Flow<List<NewsGlobalItem>>
 
     @Query("SELECT * FROM newsGlobalCache WHERE id=:id")
-    suspend fun getNewsGlobalById(id: String): NewsGlobalItem
+    suspend fun getNewsById(id: String): NewsGlobalItem
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertNewsGlobal(news: NewsGlobalItem)
+    suspend fun insertNews(news: NewsGlobalItem)
 
     @Update
-    suspend fun updateNewsGlobal(news: NewsGlobalItem)
+    suspend fun updateNews(news: NewsGlobalItem)
 
     @Delete
-    suspend fun deleteNewsGlobal(news: NewsGlobalItem)
+    suspend fun deleteNews(news: NewsGlobalItem)
 
     @Query("DELETE FROM newsGlobalCache")
-    suspend fun deleteAllNewsGlobal()
+    suspend fun deleteAllNews()
 }
