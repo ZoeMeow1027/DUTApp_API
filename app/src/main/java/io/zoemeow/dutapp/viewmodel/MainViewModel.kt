@@ -10,6 +10,7 @@ import io.zoemeow.dutapp.data.*
 import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.repository.DutAccountRepository
 import io.zoemeow.dutapp.repository.DutNewsRepository
+import io.zoemeow.dutapp.repository.NewsCacheRepository
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -19,7 +20,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
     private val dutAccRepo: DutAccountRepository,
-    private val dutNewsGlobalCacheRepo: NewsGlobalCacheRepository
+    private val dutNewsCacheDbRepo: NewsCacheRepository,
 ) : ViewModel() {
     // Exception will be saved here.
     private val exceptionWithCache: MutableState<ExceptionWithCache> = mutableStateOf(ExceptionWithCache())
@@ -51,13 +52,13 @@ class MainViewModel @Inject constructor(
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
                 if (dataGlobalFromInternet.newslist != null) {
                     newsDataWithCache.value.NewsGlobalData.value = dataGlobalFromInternet.newslist
-
+                    dutNewsCacheDbRepo.deleteAllNewsGlobal()
                     for (newsItem: NewsGlobalItem in newsDataWithCache.value.NewsGlobalData.value) {
-                        dutNewsGlobalCacheRepo.insertNews(NewsGlobalItem(
+                        dutNewsCacheDbRepo.insertNewsGlobal(NewsGlobalItem(
                             date = newsItem.date,
                             title = newsItem.title,
                             contentText = newsItem.contentText,
-                            links = ArrayList<LinkItem>(newsItem.links),
+                            links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
                         ))
                     }
@@ -70,6 +71,18 @@ class MainViewModel @Inject constructor(
             procGlobal.value = false
         }
     }
+    private fun getNewsCacheFromDb() {
+        viewModelScope.launch {
+            dutNewsCacheDbRepo.getAllNewsGlobal().collect {
+                list ->
+                newsDataWithCache.value.NewsGlobalData.value.addAll(list)
+            }
+            dutNewsCacheDbRepo.getAllNewsSubject().collect {
+                list ->
+                newsDataWithCache.value.NewsSubjectData.value.addAll(list)
+            }
+        }
+    }
 
     // Get news subjects
     private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
@@ -79,8 +92,19 @@ class MainViewModel @Inject constructor(
             try {
                 procSubjects.value = true
                 val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
-                if (dataSubjectsFromInternet.newslist != null)
+                if (dataSubjectsFromInternet.newslist != null) {
                     newsDataWithCache.value.NewsSubjectData.value = dataSubjectsFromInternet.newslist
+                    dutNewsCacheDbRepo.deleteAllNewsSubject()
+                    for (newsItem: NewsSubjectItem in newsDataWithCache.value.NewsSubjectData.value) {
+                        dutNewsCacheDbRepo.insertNewsSubject(NewsSubjectItem(
+                            date = newsItem.date,
+                            title = newsItem.title,
+                            contentText = newsItem.contentText,
+                            links = ArrayList(newsItem.links ?: ArrayList()),
+                            id = md5("${newsItem.date}-${newsItem.title}")
+                        ))
+                    }
+                }
             }
             catch (ex: Exception) {
                 exceptionWithCache.value.addException(ex)
@@ -184,6 +208,8 @@ class MainViewModel @Inject constructor(
     }
 
     init {
+        getNewsCacheFromDb()
+
         refreshNewsGlobalFromServer()
         refreshNewsSubjectsFromServer()
     }
