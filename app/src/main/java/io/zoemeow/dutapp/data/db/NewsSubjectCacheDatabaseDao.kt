@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.data
+package io.zoemeow.dutapp.data.db
 
 import androidx.room.*
 import io.zoemeow.dutapp.model.NewsSubjectItem

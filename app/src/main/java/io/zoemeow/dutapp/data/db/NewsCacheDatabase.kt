@@ -1,9 +1,9 @@
-package io.zoemeow.dutapp.data
+package io.zoemeow.dutapp.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import io.zoemeow.dutapp.LinkItemConverter
+import io.zoemeow.dutapp.utils.LinkItemConverter
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
 

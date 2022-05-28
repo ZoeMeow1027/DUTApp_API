@@ -1,7 +1,7 @@
-package io.zoemeow.dutapp.repository
+package io.zoemeow.dutapp.data.repository
 
-import io.zoemeow.dutapp.data.NewsGlobalCacheDatabaseDao
-import io.zoemeow.dutapp.data.NewsSubjectCacheDatabaseDao
+import io.zoemeow.dutapp.data.db.NewsGlobalCacheDatabaseDao
+import io.zoemeow.dutapp.data.db.NewsSubjectCacheDatabaseDao
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
 import kotlinx.coroutines.flow.Flow

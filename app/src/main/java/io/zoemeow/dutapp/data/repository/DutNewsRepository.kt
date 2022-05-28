@@ -1,10 +1,7 @@
-package io.zoemeow.dutapp.repository
+package io.zoemeow.dutapp.data.repository
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
-import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsGlobalListItem
-import io.zoemeow.dutapp.model.NewsSubjectItem
 import io.zoemeow.dutapp.model.NewsSubjectListItem
 import io.zoemeow.dutapp.network.DutFuncApi
 import javax.inject.Inject
