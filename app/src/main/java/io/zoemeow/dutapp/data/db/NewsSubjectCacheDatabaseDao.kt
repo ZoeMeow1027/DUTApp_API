@@ -1,6 +1,7 @@
 package io.zoemeow.dutapp.data.db
 
 import androidx.room.*
+import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
 import kotlinx.coroutines.flow.Flow
 
@@ -14,6 +15,9 @@ interface NewsSubjectCacheDatabaseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNews(news: NewsSubjectItem)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNews(newsList: ArrayList<NewsSubjectItem>)
 
     @Update
     suspend fun updateNews(news: NewsSubjectItem)

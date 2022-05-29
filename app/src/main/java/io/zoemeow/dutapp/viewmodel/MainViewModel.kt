@@ -45,23 +45,34 @@ class MainViewModel @Inject constructor(
     // Get news global.
     private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingNewsGlobal(): MutableState<Boolean> { return procGlobal }
-    fun refreshNewsGlobalFromServer(page: Int = 1) {
+    private val procGlobalInit: MutableState<Boolean> = mutableStateOf(true)
+    fun refreshNewsGlobalFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
+                if (!procGlobalInit.value && !force)
+                    throw Exception("App not forced. Set force to true to load.")
+
                 procGlobal.value = true
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
+
                 if (dataGlobalFromInternet.newslist != null) {
-                    newsDataWithCache.value.NewsGlobalData.value = dataGlobalFromInternet.newslist
+                    newsDataWithCache.value.NewsGlobalData.value.clear()
                     dutNewsCacheDbRepo.deleteAllNewsGlobal()
-                    for (newsItem: NewsGlobalItem in newsDataWithCache.value.NewsGlobalData.value) {
-                        dutNewsCacheDbRepo.insertNewsGlobal(NewsGlobalItem(
+
+                    val list = ArrayList<NewsGlobalItem>()
+                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.newslist) {
+                        val value = NewsGlobalItem(
                             date = newsItem.date,
                             title = newsItem.title,
                             contentText = newsItem.contentText,
                             links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
-                        ))
+                        )
+                        list.add(value)
                     }
+
+                    dutNewsCacheDbRepo.insertNewsGlobal(list)
+                    newsDataWithCache.value.NewsGlobalData.value.addAll(list)
                 }
             }
             catch (ex: Exception) {
@@ -69,22 +80,29 @@ class MainViewModel @Inject constructor(
                 Log.d("NewsGlobal", ex.message.toString())
             }
             procGlobal.value = false
+            procGlobalInit.value = false
         }
     }
 
     // Get news subjects
     private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingNewsSubject(): MutableState<Boolean> { return procSubjects }
-    fun refreshNewsSubjectsFromServer(page: Int = 1) {
+    private val procSubjectsInit: MutableState<Boolean> = mutableStateOf(true)
+    fun refreshNewsSubjectsFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
+                if (!procSubjectsInit.value && !force)
+                    throw Exception("App not forced. Set force to true to load.")
+
                 procSubjects.value = true
                 val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
                 if (dataSubjectsFromInternet.newslist != null) {
-                    newsDataWithCache.value.NewsSubjectData.value = dataSubjectsFromInternet.newslist
+                    newsDataWithCache.value.NewsSubjectData.value.clear()
                     dutNewsCacheDbRepo.deleteAllNewsSubject()
-                    for (newsItem: NewsSubjectItem in newsDataWithCache.value.NewsSubjectData.value) {
-                        dutNewsCacheDbRepo.insertNewsSubject(NewsSubjectItem(
+
+                    val list = ArrayList<NewsSubjectItem>()
+                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.newslist) {
+                        list.add(NewsSubjectItem(
                             date = newsItem.date,
                             title = newsItem.title,
                             contentText = newsItem.contentText,
@@ -92,6 +110,9 @@ class MainViewModel @Inject constructor(
                             id = md5("${newsItem.date}-${newsItem.title}")
                         ))
                     }
+
+                    dutNewsCacheDbRepo.insertNewsSubject(list)
+                    newsDataWithCache.value.NewsSubjectData.value.addAll(list)
                 }
             }
             catch (ex: Exception) {
@@ -99,6 +120,7 @@ class MainViewModel @Inject constructor(
                 Log.d("NewsSubject", ex.message.toString())
             }
             procSubjects.value = false
+            procSubjectsInit.value = false
         }
     }
 
@@ -115,7 +137,6 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-
 
     // Account Information
     private val accDataWithCache: MutableState<AccountDataWithCache> = mutableStateOf(
@@ -145,6 +166,7 @@ class MainViewModel @Inject constructor(
             procAccount.value = false
         }
     }
+
     fun logout() {
         viewModelScope.launch {
             try {
@@ -161,6 +183,7 @@ class MainViewModel @Inject constructor(
             procAccount.value = false
         }
     }
+
     fun isLoggedIn(): Boolean {
         return (accDataWithCache.value.isStoringSessionID())
     }
