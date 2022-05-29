@@ -15,6 +15,9 @@ interface NewsGlobalCacheDatabaseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNews(news: NewsGlobalItem)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNews(newsList: ArrayList<NewsGlobalItem>)
+
     @Update
     suspend fun updateNews(news: NewsGlobalItem)
 
