@@ -39,15 +39,12 @@ fun Account(mainViewModel: MainViewModel) {
             },
             loggedInRequest = {
                 mainViewModel.accountPaneIndex.value = 2
-                mainViewModel.getSubjectScheduleAndFee(21, 2, false)
-                mainViewModel.getAccountInformation()
             }
         )
         2 -> AccountPageLoggedIn(
             accInfo = mainViewModel.accountData.value.AccountInformationData.value,
             logout = {
                 mainViewModel.logout()
-                mainViewModel.accountPaneIndex.value = 0
             }
         )
     }
