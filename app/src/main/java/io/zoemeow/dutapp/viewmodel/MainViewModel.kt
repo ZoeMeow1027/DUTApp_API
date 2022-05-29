@@ -11,6 +11,7 @@ import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.data.repository.DutAccountRepository
 import io.zoemeow.dutapp.data.repository.DutNewsRepository
 import io.zoemeow.dutapp.data.repository.NewsCacheRepository
+import io.zoemeow.dutapp.utils.AppSettingsFun
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -150,14 +151,24 @@ class MainViewModel @Inject constructor(
     fun isProcessingAccount(): MutableState<Boolean> {
         return procAccount
     }
-    fun login(user: String, pass: String, rememberLogin: Boolean = false) {
+    fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             try {
                 procAccount.value = true
 
                 val result = dutAccRepo.dutLogin(user, pass)
-                if (result.loggedin)
+                if (result.loggedin) {
                     accDataWithCache.value.SessionID.value = result.sessionid!!
+                    appSettings.autoLogin = rememberLogin
+                    appSettings.username = user
+                    appSettings.password = pass
+
+                    // Navigate to page logged in
+                    accountPaneIndex.value = 2
+
+                    getSubjectScheduleAndFee(21, 2, false)
+                    getAccountInformation()
+                }
             }
             catch (ex: Exception) {
                 exceptionWithCache.value.addException(ex)
@@ -175,6 +186,13 @@ class MainViewModel @Inject constructor(
                 val temp = accDataWithCache.value.SessionID.value
                 accDataWithCache.value.clearAllData()
                 dutAccRepo.dutLogout(temp)
+
+                appSettings.autoLogin = false
+                appSettings.username = null
+                appSettings.password = null
+
+                // Navigate to page not logged in
+                accountPaneIndex.value = 0
             }
             catch (ex: Exception) {
                 exceptionWithCache.value.addException(ex)
@@ -233,7 +251,21 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private val appSettings = AppSettingsFun()
+
+    private fun loadSettings() {
+        viewModelScope.launch {
+            appSettings.importSettings()
+            if (appSettings.autoLogin) {
+                Log.d("AutoLogin", "AutoLoginTriggered")
+                if (appSettings.username != null && appSettings.password != null)
+                    login(appSettings.username!!, appSettings.password!!)
+            }
+        }
+    }
+
     init {
+        loadSettings()
         getNewsCacheFromDb()
 
         refreshNewsGlobalFromServer()

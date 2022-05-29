@@ -1,5 +1,7 @@
 package io.zoemeow.dutapp.model
 
+import com.google.gson.annotations.SerializedName
+
 data class AccountInformationItem(
     val name: String? = null,
     val dateOfBirth: String? = null,
@@ -15,15 +17,15 @@ data class AccountInformationItem(
     val religion: String? = null,
     val accountBankId: String? = null,
     val accountBankName: String? = null,
-    val hIId: String? = null,
-    val hIExpireDate: String? = null,
+    @SerializedName("hiid") val hIId: String? = null,
+    @SerializedName("hiexpiredate") val hIExpireDate: String? = null,
     val specialization: String? = null,
-    val schoolClass: String? = null,
-    val trainingProgramPlan: String? = null,
-    val trainingProgramPlan2: String? = null,
-    val schoolEmail: String? = null,
-    val personalEmail: String? = null,
-    val schoolEmailInitPass: String? = null,
+    @SerializedName("class") val schoolClass: String? = null,
+    @SerializedName("trainingprogramplan") val trainingProgramPlan: String? = null,
+    @SerializedName("trainingprogramplan2") val trainingProgramPlan2: String? = null,
+    @SerializedName("schoolemail") val schoolEmail: String? = null,
+    @SerializedName("personalemail") val personalEmail: String? = null,
+    @SerializedName("schoolemailinitpass") val schoolEmailInitPass: String? = null,
     val facebookUrl: String? = null,
     val phoneNumber: String? = null,
     val address: String? = null,
