@@ -11,21 +11,21 @@ class NewsDetailsClicked(
 ) {
     var newsGlobal: MutableState<NewsGlobalItem> = mutableStateOf(NewsGlobalItem())
     var newsSubject: MutableState<NewsSubjectItem> = mutableStateOf(NewsSubjectItem())
-    private var newsType: MutableState<Int> = mutableStateOf(-1)
+    private var newsTypePri: MutableState<Int> = mutableStateOf(-1)
 
-    var NewsType: MutableState<Int>
-        get() = newsType
-        private set(value) { newsType.value = value.value }
+    var newsType: MutableState<Int>
+        get() = newsTypePri
+        private set(value) { newsTypePri.value = value.value }
 
     fun setViewDetailsNewsGlobal(value: NewsGlobalItem) {
         newsGlobal.value = value
-        NewsType.value = 0
+        newsType.value = 0
         showSheetRequested()
     }
 
     fun setViewDetailsNewsSubject(value: NewsSubjectItem) {
         newsSubject.value = value
-        NewsType.value = 1
+        newsType.value = 1
         showSheetRequested()
     }
 

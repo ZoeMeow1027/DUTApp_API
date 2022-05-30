@@ -6,7 +6,7 @@ import java.io.BufferedReader
 import java.io.File
 import javax.inject.Inject
 
-class AppSettingsRepository @Inject constructor(private val file: File) {
+class AppSettingsFileRepository @Inject constructor(private val file: File) {
     private var appSettings: AppSettings = AppSettings()
 
     var username: String?

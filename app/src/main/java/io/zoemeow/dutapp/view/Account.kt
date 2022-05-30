@@ -1,5 +1,6 @@
 package io.zoemeow.dutapp.view
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -7,12 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -22,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.model.AccountInformationItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun Account(mainViewModel: MainViewModel) {
@@ -37,12 +35,10 @@ fun Account(mainViewModel: MainViewModel) {
             backRequest = {
                 mainViewModel.accountPaneIndex.value = 0
             },
-            loggedInRequest = {
-                mainViewModel.accountPaneIndex.value = 2
-            }
         )
-        2 -> AccountPageLoggedIn(
-            accInfo = mainViewModel.accountData.value.AccountInformationData.value,
+        2 -> AccountPageLoggingIn()
+        3 -> AccountPageLoggedIn(
+            accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
             logout = {
                 mainViewModel.logout()
             }
@@ -52,7 +48,9 @@ fun Account(mainViewModel: MainViewModel) {
 
 @Composable
 fun AccountPageNotLoggedIn(loginRequest: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(20.dp)) {
         Surface(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
@@ -79,25 +77,18 @@ fun AccountPageNotLoggedIn(loginRequest: () -> Unit) {
 fun AccountPageLogin(
     mainViewModel: MainViewModel,
     backRequest: () -> Unit,
-    loggedInRequest: () -> Unit
 ) {
     val user = remember { mutableStateOf(String()) }
     val pass = remember { mutableStateOf(String()) }
-    val enabledControls = remember { mutableStateOf(true) }
-    val context = LocalContext.current
-
+    val autoLogin = remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
-    val clicked = remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
     val passTextFieldFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
     val loginCommand: () -> Unit = {
-        clicked.value = true
-        mainViewModel.login(user.value, pass.value)
-        enabledControls.value = false
         focusManager.clearFocus()
+        mainViewModel.login(user.value, pass.value, autoLogin.value)
+        pass.value = String()
     }
 
     Scaffold(
@@ -105,16 +96,13 @@ fun AccountPageLogin(
         content = { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(20.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                         .navigationBarsPadding()
                         .wrapContentHeight(),
                     verticalArrangement = Arrangement.Top,
                 ) {
-                    // Progress bar for logging in...
-                    if (clicked.value) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    }
-                    Spacer(modifier = Modifier.size(5.dp))
                     Text(
                         text = stringResource(id = R.string.navlogin_screenlogin_title),
                         style = MaterialTheme.typography.headlineMedium
@@ -130,12 +118,9 @@ fun AccountPageLogin(
                             onGo = { passTextFieldFocusRequester.requestFocus() }
                         ),
                         onValueChange = { user.value = it },
-                        enabled = enabledControls.value,
                     )
                     OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                             .focusRequester(passTextFieldFocusRequester),
                         value = pass.value,
                         label = { Text(stringResource(id = R.string.navlogin_screenlogin_password)) },
@@ -146,44 +131,35 @@ fun AccountPageLogin(
                         ),
                         keyboardActions = KeyboardActions(onGo = { loginCommand() }),
                         onValueChange = { pass.value = it },
-                        enabled = enabledControls.value,
                     )
+                    // Check box: Auto login
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
+                        modifier = Modifier.clickable { autoLogin.value = !autoLogin.value },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked = autoLogin.value,
+                            onCheckedChange = { autoLogin.value = it },
+                        )
+                        Spacer(modifier = Modifier.size(10.dp))
+                        Text(
+                            text = stringResource(id = R.string.navlogin_screenlogin_rememberlogin)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Button(
-                            enabled = enabledControls.value,
                             onClick = loginCommand,
                             content = { Text(stringResource(id = R.string.navlogin_screenlogin_btnlogin)) },
                         )
                         Spacer(modifier = Modifier.size(10.dp))
                         Button(
-                            enabled = enabledControls.value,
                             onClick = backRequest,
                             content = { Text(stringResource(id = R.string.navlogin_screenlogin_btncancel)) },
                         )
                     }
-                    AccountCheckLogin(
-                        mainViewModel = mainViewModel,
-                        clicked = clicked.value,
-                        loginFail = {
-                            scope.launch {
-                                clicked.value = false
-                                snackBarHostState.showSnackbar(context.getString(R.string.navlogin_screenlogin_loginfailed))
-                            }
-                            enabledControls.value = true
-                        },
-                        loginSuccess = {
-                            user.value = String()
-                            pass.value = String()
-                            clicked.value = false
-                            enabledControls.value = true
-                            loggedInRequest()
-                        }
-                    )
                 }
             }
         }
@@ -191,17 +167,29 @@ fun AccountPageLogin(
 }
 
 @Composable
-fun AccountCheckLogin(
-    mainViewModel: MainViewModel,
-    clicked: Boolean,
-    loginFail: () -> Unit,
-    loginSuccess: () -> Unit
-) {
-    if (clicked) {
-        if (!mainViewModel.isProcessingAccount().value) {
-            if (!mainViewModel.isLoggedIn()) {
-                loginFail()
-            } else loginSuccess()
+fun AccountPageLoggingIn() {
+    Surface(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Please wait",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Spacer(modifier = Modifier.size(5.dp))
+            Text(
+                text = "Logging you in...",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.size(15.dp))
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 90.dp, end = 90.dp)
+            )
         }
     }
 }
@@ -212,15 +200,14 @@ fun AccountPageLoggedIn(accInfo: AccountInformationItem, logout: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        if (accInfo != null) {
-            Text("Name: ${accInfo.name ?: String()}")
-            Text("Specialization: ${accInfo.specialization ?: String()}")
-            Text("Class: ${accInfo.schoolClass ?: String()}")
-            Text("School email: ${accInfo.schoolEmail ?: String()}")
-            Text("Personal email: ${accInfo.personalEmail ?: String()}")
-            Text("Facebook URL: ${accInfo.facebookUrl ?: String()}")
-            Text("Phone number: ${accInfo.phoneNumber ?: String()}")
-        }
+        Text("Name: ${accInfo.name ?: String()}")
+        Text("Specialization: ${accInfo.specialization ?: String()}")
+        Text("Class: ${accInfo.schoolClass ?: String()}")
+        Text("School email: ${accInfo.schoolEmail ?: String()}")
+        Text("Personal email: ${accInfo.personalEmail ?: String()}")
+        Text("Facebook URL: ${accInfo.facebookUrl ?: String()}")
+        Text("Phone number: ${accInfo.phoneNumber ?: String()}")
+
         Button(
             onClick = logout
         ) {

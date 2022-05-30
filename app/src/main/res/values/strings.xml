@@ -6,6 +6,7 @@
     <!-- News page -->
     <string name="navnews_navtab_newsglobal">News Global</string>
     <string name="navnews_navtab_newssubject">News Subject</string>
+    <string name="navnaws_notify_loadnewsfailed">We couldn\'t load news for you! Check your connection and try again.</string>
 
     <!-- News details page -->
     <string name="newsdetails_swipeorclickabovetoexit">(Swipe bottom or click empty space above this to exit)</string>
@@ -24,8 +25,12 @@
     <string name="navlogin_screenlogin_title">Login</string>
     <string name="navlogin_screenlogin_username">Username</string>
     <string name="navlogin_screenlogin_password">Password</string>
+    <string name="navlogin_screenlogin_rememberlogin">Remember your login</string>
     <string name="navlogin_screenlogin_btnlogin">Login</string>
     <string name="navlogin_screenlogin_btncancel">Cancel</string>
-    <string name="navlogin_screenlogin_loginfailed">Log in failed! Check your account and try again.</string>
     <string name="navlogin_loggedin_btnlogout">Logout</string>
+    <string name="navlogin_screenlogin_loginfailed">Log in failed! Check your account and try again.</string>
+    <string name="navlogin_screenlogin_autologinfailed">We couldn\'t auto logged in for you. Check your account and try again.</string>
+    <string name="navlogin_screenlogin_loginsuccessful">Successfully logged in!</string>
+    <string name="navlogin_screenlogin_loggedout">Successfully logged out!</string>
 </resources>

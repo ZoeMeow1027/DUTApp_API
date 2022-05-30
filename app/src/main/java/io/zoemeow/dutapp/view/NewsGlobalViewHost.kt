@@ -54,7 +54,7 @@ fun NewsGlobalViewHost(
             val errorText = arrayOf("Nothing")
             LazyColumn(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Top,
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(if (isLoading.value) loadingText else errorText) {
@@ -89,7 +89,7 @@ fun NewsGlobalLoadList(
                     .padding(top = 5.dp, bottom = 5.dp)
                     // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .clickable { newsDetailsClicked.value?.setViewDetailsNewsGlobal(item) }
             ) {
                 Column(

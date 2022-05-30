@@ -6,7 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.zoemeow.dutapp.repository.AppSettingsRepository
+import io.zoemeow.dutapp.repository.AppSettingsFileRepository
 import java.io.File
 import javax.inject.Singleton
 
@@ -15,9 +15,9 @@ import javax.inject.Singleton
 object AppSettingsFileModule {
     @Provides
     @Singleton
-    fun provideAppSettingsRepository(@ApplicationContext context: Context): AppSettingsRepository {
+    fun provideAppSettingsRepository(@ApplicationContext context: Context): AppSettingsFileRepository {
         val filePath = "${context.filesDir.path}/appSettings.json"
         val file = File(filePath)
-        return AppSettingsRepository(file)
+        return AppSettingsFileRepository(file)
     }
 }
