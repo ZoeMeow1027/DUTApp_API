@@ -106,7 +106,7 @@ fun MainScreen() {
 //                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
 //                )
 //            },
-            bottomBar = { BottomNavigationBar(navController = navController) },
+            bottomBar = { BottomNavigationBar(loggedIn = mainViewModel.isLoggedIn(), navController = navController) },
             content = { contentPadding ->
                 NavigationHost(
                     navController = navController,
@@ -161,7 +161,7 @@ fun NavigationHost(
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(loggedIn: Boolean, navController: NavHostController) {
     NavigationBar {
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
@@ -182,7 +182,14 @@ fun BottomNavigationBar(navController: NavHostController) {
                 },
                 icon = {
                     Icon(
-                        imageVector = ImageVector.vectorResource(id = navItem.imageId),
+                        imageVector = (
+                                if (navItem.route == "account") {
+                                    if (loggedIn)
+                                        ImageVector.vectorResource(id = R.drawable.ic_baseline_accountcircle_24)
+                                    else ImageVector.vectorResource(id = R.drawable.ic_baseline_noaccountcircle_24)
+                                }
+                                else ImageVector.vectorResource(id = navItem.imageId)
+                        ),
                         contentDescription = navItem.title
                     )
                 },

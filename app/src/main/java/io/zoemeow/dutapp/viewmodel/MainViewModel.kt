@@ -270,7 +270,7 @@ class MainViewModel @Inject constructor(
             }
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("Logout", ex.message.toString())
+                ex.printStackTrace()
             }
         }
     }
@@ -279,10 +279,14 @@ class MainViewModel @Inject constructor(
         return (accCacheData.value.isStoringSessionID())
     }
 
+    internal var procSubjectSchedule = mutableStateOf(false)
+
     // Get subject schedule and subject fee
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
+                procSubjectSchedule.value = true
+
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
                     accCacheData.value.sessionID.value, year, semester, inSummer)
@@ -304,13 +308,19 @@ class MainViewModel @Inject constructor(
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
             }
+
+            procSubjectSchedule.value = false
         }
     }
+
+    internal val procAccInfo = mutableStateOf(false)
 
     // Get account information
     fun getAccountInformation() {
         viewModelScope.launch {
             try {
+                procAccInfo.value = true
+
                 // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
                     accCacheData.value.sessionID.value)
@@ -323,6 +333,8 @@ class MainViewModel @Inject constructor(
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
             }
+
+            procAccInfo.value = false
         }
     }
 
