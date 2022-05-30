@@ -32,8 +32,6 @@ class NewsDetailsClicked(
     fun clearViewDetails() {
         if (newsType.value != -1) {
             newsType.value = -1
-            newsGlobal.value = NewsGlobalItem()
-            newsSubject.value = NewsSubjectItem()
         }
     }
 

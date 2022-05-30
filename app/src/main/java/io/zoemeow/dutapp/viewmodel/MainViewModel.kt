@@ -8,10 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.zoemeow.dutapp.data.*
 import io.zoemeow.dutapp.model.*
-import io.zoemeow.dutapp.data.repository.DutAccountRepository
-import io.zoemeow.dutapp.data.repository.DutNewsRepository
-import io.zoemeow.dutapp.data.repository.NewsCacheRepository
-import io.zoemeow.dutapp.utils.AppSettingsFun
+import io.zoemeow.dutapp.repository.*
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -21,10 +18,11 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
     private val dutAccRepo: DutAccountRepository,
-    private val dutNewsCacheDbRepo: NewsCacheRepository,
+    private val appSettingsRepo: AppSettingsRepository,
+    private val newsCacheFileRepo: NewsCacheFileRepository,
 ) : ViewModel() {
     // Exception will be saved here.
-    private val exceptionWithCache: MutableState<ExceptionWithCache> = mutableStateOf(ExceptionWithCache())
+    private val exceptionCacheData: MutableState<ExceptionCacheData> = mutableStateOf(ExceptionCacheData())
 
     // News Details View when clicked a news.
     val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
@@ -34,19 +32,24 @@ class MainViewModel @Inject constructor(
     val accountPaneIndex = mutableStateOf(0)
 
     // News data with cache (for easier manage).
-    private val newsDataWithCache: MutableState<NewsDataWithCache> = mutableStateOf(NewsDataWithCache())
-    val newsData: MutableState<NewsDataWithCache>
-        get() = newsDataWithCache
+    private val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
+    val newsData: MutableState<NewsCacheData>
+        get() = newsCacheData
 
+    // Generate md5 from string.
     private fun md5(input: String): String {
         val md = MessageDigest.getInstance("MD5")
         return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
     }
 
     // Get news global.
+    // Check if is getting news global
     private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingNewsGlobal(): MutableState<Boolean> { return procGlobal }
+
     private val procGlobalInit: MutableState<Boolean> = mutableStateOf(true)
+
+    // Refresh news global
     fun refreshNewsGlobalFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
@@ -56,12 +59,12 @@ class MainViewModel @Inject constructor(
                 procGlobal.value = true
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
 
-                if (dataGlobalFromInternet.newslist != null) {
-                    newsDataWithCache.value.NewsGlobalData.value.clear()
-                    dutNewsCacheDbRepo.deleteAllNewsGlobal()
+                if (dataGlobalFromInternet.newsList != null) {
+                    newsCacheData.value.NewsGlobalData.value.clear()
+                    newsCacheFileRepo.deleteAllNewsGlobal()
 
                     val list = ArrayList<NewsGlobalItem>()
-                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.newslist) {
+                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.newsList) {
                         val value = NewsGlobalItem(
                             date = newsItem.date,
                             title = newsItem.title,
@@ -72,12 +75,12 @@ class MainViewModel @Inject constructor(
                         list.add(value)
                     }
 
-                    dutNewsCacheDbRepo.insertNewsGlobal(list)
-                    newsDataWithCache.value.NewsGlobalData.value.addAll(list)
+                    newsCacheFileRepo.setNewsGlobal(list)
+                    newsCacheData.value.NewsGlobalData.value.addAll(list)
                 }
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("NewsGlobal", ex.message.toString())
             }
             procGlobal.value = false
@@ -86,8 +89,10 @@ class MainViewModel @Inject constructor(
     }
 
     // Get news subjects
+    // Check if is getting news subject
     private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
     fun isProcessingNewsSubject(): MutableState<Boolean> { return procSubjects }
+
     private val procSubjectsInit: MutableState<Boolean> = mutableStateOf(true)
     fun refreshNewsSubjectsFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
@@ -97,12 +102,12 @@ class MainViewModel @Inject constructor(
 
                 procSubjects.value = true
                 val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
-                if (dataSubjectsFromInternet.newslist != null) {
-                    newsDataWithCache.value.NewsSubjectData.value.clear()
-                    dutNewsCacheDbRepo.deleteAllNewsSubject()
+                if (dataSubjectsFromInternet.newsList != null) {
+                    newsCacheData.value.NewsSubjectData.value.clear()
+                    newsCacheFileRepo.deleteAllNewsSubject()
 
                     val list = ArrayList<NewsSubjectItem>()
-                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.newslist) {
+                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.newsList) {
                         list.add(NewsSubjectItem(
                             date = newsItem.date,
                             title = newsItem.title,
@@ -112,12 +117,12 @@ class MainViewModel @Inject constructor(
                         ))
                     }
 
-                    dutNewsCacheDbRepo.insertNewsSubject(list)
-                    newsDataWithCache.value.NewsSubjectData.value.addAll(list)
+                    newsCacheFileRepo.setNewsSubject(list)
+                    newsCacheData.value.NewsSubjectData.value.addAll(list)
                 }
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("NewsSubject", ex.message.toString())
             }
             procSubjects.value = false
@@ -125,25 +130,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Get news cache from db.
-    private fun getNewsCacheFromDb() {
-        viewModelScope.launch {
-            dutNewsCacheDbRepo.getAllNewsGlobal().collect {
-                    list ->
-                newsDataWithCache.value.NewsGlobalData.value.addAll(list)
-            }
-            dutNewsCacheDbRepo.getAllNewsSubject().collect {
-                    list ->
-                newsDataWithCache.value.NewsSubjectData.value.addAll(list)
-            }
-        }
-    }
-
     // Account Information
-    private val accDataWithCache: MutableState<AccountDataWithCache> = mutableStateOf(
-        AccountDataWithCache()
+    private val accDataWithCache: MutableState<AccountCacheData> = mutableStateOf(
+        AccountCacheData()
     )
-    val accountData: MutableState<AccountDataWithCache>
+    val accountData: MutableState<AccountCacheData>
         get() = accDataWithCache
 
     // Login/logout
@@ -157,11 +148,11 @@ class MainViewModel @Inject constructor(
                 procAccount.value = true
 
                 val result = dutAccRepo.dutLogin(user, pass)
-                if (result.loggedin) {
-                    accDataWithCache.value.SessionID.value = result.sessionid!!
-                    appSettings.autoLogin = rememberLogin
-                    appSettings.username = user
-                    appSettings.password = pass
+                if (result.loggedIn) {
+                    accDataWithCache.value.SessionID.value = result.sessionId!!
+                    appSettingsRepo.autoLogin = rememberLogin
+                    appSettingsRepo.username = user
+                    appSettingsRepo.password = pass
 
                     // Navigate to page logged in
                     accountPaneIndex.value = 2
@@ -171,7 +162,7 @@ class MainViewModel @Inject constructor(
                 }
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("Login", ex.message.toString())
             }
             procAccount.value = false
@@ -183,19 +174,20 @@ class MainViewModel @Inject constructor(
             try {
                 procAccount.value = true
 
-                val temp = accDataWithCache.value.SessionID.value
-                accDataWithCache.value.clearAllData()
-                dutAccRepo.dutLogout(temp)
-
-                appSettings.autoLogin = false
-                appSettings.username = null
-                appSettings.password = null
+                appSettingsRepo.autoLogin = false
+                appSettingsRepo.username = null
+                appSettingsRepo.password = null
 
                 // Navigate to page not logged in
                 accountPaneIndex.value = 0
+
+                // Logout
+                val temp = accDataWithCache.value.SessionID.value
+                accDataWithCache.value.clearAllData()
+                dutAccRepo.dutLogout(temp)
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("Logout", ex.message.toString())
             }
             procAccount.value = false
@@ -214,18 +206,18 @@ class MainViewModel @Inject constructor(
 
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
                     accDataWithCache.value.SessionID.value, year, semester, inSummer)
-                if (dataSubjectScheduleFromInternet.schedulelist != null &&
-                        dataSubjectScheduleFromInternet.schedulelist.size > 0)
-                    accDataWithCache.value.SubjectScheduleData.value = dataSubjectScheduleFromInternet.schedulelist
+                if (dataSubjectScheduleFromInternet.scheduleList != null &&
+                        dataSubjectScheduleFromInternet.scheduleList.size > 0)
+                    accDataWithCache.value.SubjectScheduleData.value = dataSubjectScheduleFromInternet.scheduleList
 
                 val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
                     accDataWithCache.value.SessionID.value, year, semester, inSummer)
-                if (dataSubjectFeeFromInternet.feelist != null &&
-                        dataSubjectFeeFromInternet.feelist.size > 0)
-                    accDataWithCache.value.SubjectFeeData.value = dataSubjectFeeFromInternet.feelist
+                if (dataSubjectFeeFromInternet.feeList != null &&
+                        dataSubjectFeeFromInternet.feeList.size > 0)
+                    accDataWithCache.value.SubjectFeeData.value = dataSubjectFeeFromInternet.feeList
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("SubjectScheduleFee", ex.message.toString())
             }
             procAccount.value = false
@@ -240,34 +232,39 @@ class MainViewModel @Inject constructor(
 
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
                     accDataWithCache.value.SessionID.value)
-                if (dataAccInfoFromInternet.accountinfo != null)
-                    accDataWithCache.value.AccountInformationData.value = dataAccInfoFromInternet.accountinfo
+                if (dataAccInfoFromInternet.accountInfo != null)
+                    accDataWithCache.value.AccountInformationData.value = dataAccInfoFromInternet.accountInfo
             }
             catch (ex: Exception) {
-                exceptionWithCache.value.addException(ex)
+                exceptionCacheData.value.addException(ex)
                 Log.d("AccInfo", ex.message.toString())
             }
             procAccount.value = false
         }
     }
 
-    private val appSettings = AppSettingsFun()
-
+    // Load settings from appSettings.json.
     private fun loadSettings() {
         viewModelScope.launch {
-            appSettings.importSettings()
-            if (appSettings.autoLogin) {
+            // Load all old news
+            newsCacheData.value.NewsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
+            newsCacheData.value.NewsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
+
+            // Detect auto login
+            if (appSettingsRepo.autoLogin) {
                 Log.d("AutoLogin", "AutoLoginTriggered")
-                if (appSettings.username != null && appSettings.password != null)
-                    login(appSettings.username!!, appSettings.password!!)
+                if (appSettingsRepo.username != null && appSettingsRepo.password != null)
+                    login(appSettingsRepo.username!!, appSettingsRepo.password!!)
             }
         }
     }
 
     init {
+        // Load settings first before continue.
         loadSettings()
-        getNewsCacheFromDb()
-
+        // Load news cache for backup if internet is not available.
+//        getNewsCacheFromDb()
+        // Auto refresh news in server at startup.
         refreshNewsGlobalFromServer()
         refreshNewsSubjectsFromServer()
     }

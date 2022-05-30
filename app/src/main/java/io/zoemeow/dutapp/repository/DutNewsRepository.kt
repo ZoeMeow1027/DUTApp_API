@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.data.repository
+package io.zoemeow.dutapp.repository
 
 import android.util.Log
 import io.zoemeow.dutapp.model.NewsGlobalListItem

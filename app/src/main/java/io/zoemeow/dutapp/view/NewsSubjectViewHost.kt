@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.data.NewsDataWithCache
+import io.zoemeow.dutapp.data.NewsCacheData
 import io.zoemeow.dutapp.data.NewsDetailsClicked
 import io.zoemeow.dutapp.model.NewsSubjectItem
 
@@ -36,7 +36,7 @@ import io.zoemeow.dutapp.model.NewsSubjectItem
 fun NewsSubjectViewHost(
     newsDetailsClicked: MutableState<NewsDetailsClicked?>,
     isLoading: MutableState<Boolean>,
-    data: MutableState<NewsDataWithCache>,
+    data: MutableState<NewsCacheData>,
     refreshRequired: () -> Unit,
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)

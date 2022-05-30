@@ -29,14 +29,14 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.data.NewsDataWithCache
+import io.zoemeow.dutapp.data.NewsCacheData
 import io.zoemeow.dutapp.data.NewsDetailsClicked
 
 @Composable
 fun NewsGlobalViewHost(
     newsDetailsClicked: MutableState<NewsDetailsClicked?>,
     isLoading: MutableState<Boolean>,
-    data: MutableState<NewsDataWithCache>,
+    data: MutableState<NewsCacheData>,
     refreshRequired: () -> Unit,
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
