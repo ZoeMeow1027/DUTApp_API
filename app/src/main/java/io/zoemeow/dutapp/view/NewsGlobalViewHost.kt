@@ -10,10 +10,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +43,13 @@ fun NewsGlobalViewHost(
     refreshRequired: () -> Unit,
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
+    LaunchedEffect(Unit) {
+        snapshotFlow { isLoading.value }
+            .collect {
+                if (!it) swipeRefreshState.isRefreshing = isLoading.value
+            }
+    }
+
     SwipeRefresh(
         state = swipeRefreshState,
         onRefresh = {

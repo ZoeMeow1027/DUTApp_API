@@ -1,7 +1,11 @@
 package io.zoemeow.dutapp.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -10,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
@@ -37,20 +42,19 @@ fun Account(mainViewModel: MainViewModel) {
             },
         )
         2 -> AccountPageLoggingIn()
-        3 -> AccountPageLoggedIn(
-            accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
-            logout = {
-                mainViewModel.logout()
-            }
-        )
+        3 -> when (mainViewModel.procAccInfo.value) {
+            true -> AccountPageLoadingYourInfo()
+            false -> AccountPageLoggedIn(
+                accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
+                logout = { mainViewModel.logout() }
+            )
+        }
     }
 }
 
 @Composable
 fun AccountPageNotLoggedIn(loginRequest: () -> Unit) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(20.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
         Surface(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
@@ -81,7 +85,6 @@ fun AccountPageLogin(
     val user = remember { mutableStateOf(String()) }
     val pass = remember { mutableStateOf(String()) }
     val autoLogin = remember { mutableStateOf(false) }
-    val snackBarHostState = remember { SnackbarHostState() }
     val passTextFieldFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
@@ -92,13 +95,10 @@ fun AccountPageLogin(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackBarHostState) },
         content = { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
+                    modifier = Modifier.fillMaxWidth().padding(20.dp)
                         .navigationBarsPadding()
                         .wrapContentHeight(),
                     verticalArrangement = Arrangement.Top,
@@ -120,7 +120,9 @@ fun AccountPageLogin(
                         onValueChange = { user.value = it },
                     )
                     OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
                             .focusRequester(passTextFieldFocusRequester),
                         value = pass.value,
                         label = { Text(stringResource(id = R.string.navlogin_screenlogin_password)) },
@@ -147,7 +149,9 @@ fun AccountPageLogin(
                         )
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Button(
@@ -168,9 +172,7 @@ fun AccountPageLogin(
 
 @Composable
 fun AccountPageLoggingIn() {
-    Surface(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -195,22 +197,94 @@ fun AccountPageLoggingIn() {
 }
 
 @Composable
+fun AccountPageLoadingYourInfo() {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Please wait",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Spacer(modifier = Modifier.size(5.dp))
+            Text(
+                text = "Loading your information...",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.size(15.dp))
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 90.dp, end = 90.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun AccountPageLoggedIn(accInfo: AccountInformationItem, logout: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Text("Name: ${accInfo.name ?: String()}")
-        Text("Specialization: ${accInfo.specialization ?: String()}")
-        Text("Class: ${accInfo.schoolClass ?: String()}")
-        Text("School email: ${accInfo.schoolEmail ?: String()}")
-        Text("Personal email: ${accInfo.personalEmail ?: String()}")
-        Text("Facebook URL: ${accInfo.facebookUrl ?: String()}")
-        Text("Phone number: ${accInfo.phoneNumber ?: String()}")
-
-        Button(
-            onClick = logout
+        Box(
+            modifier = Modifier.fillMaxWidth().height(200.dp)
+                .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
         ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Text(
+                    text = accInfo.name ?: String(),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(modifier = Modifier.size(5.dp))
+                Text(
+                    text = accInfo.studentId ?: String(),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = accInfo.specialization ?: String(),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+
+        data class AccInfoItem(
+            val key: String,
+            val value: String,
+        )
+        val list: ArrayList<AccInfoItem> = arrayListOf(
+            AccInfoItem("Class", accInfo.schoolClass ?: String()),
+            AccInfoItem("School Email", accInfo.schoolEmail ?: String()),
+            AccInfoItem("Email", accInfo.personalEmail ?: String()),
+            AccInfoItem("Facebook URL", accInfo.facebookUrl ?: String()),
+            AccInfoItem("Phone Number", accInfo.phoneNumber ?: String()),
+        )
+
+        Spacer(modifier = Modifier.size(20.dp))
+        LazyColumn {
+            items(list) { item ->
+                Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 10.dp, end = 10.dp)) {
+                    Text(
+                        text = item.key,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Spacer(modifier = Modifier.size(3.dp))
+                    Text(
+                        text = item.value,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.size(20.dp))
+        Button(onClick = logout) {
             Text(stringResource(id = R.string.navlogin_loggedin_btnlogout))
         }
     }
