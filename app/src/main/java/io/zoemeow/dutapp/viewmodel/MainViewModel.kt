@@ -1,11 +1,14 @@
 package io.zoemeow.dutapp.viewmodel
 
+import android.content.Context
 import android.util.Log
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.*
 import io.zoemeow.dutapp.model.*
 import io.zoemeow.dutapp.repository.*
@@ -18,23 +21,32 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val dutNewsRepo: DutNewsRepository,
     private val dutAccRepo: DutAccountRepository,
-    private val appSettingsRepo: AppSettingsRepository,
+    private val appSettingsRepo: AppSettingsFileRepository,
     private val newsCacheFileRepo: NewsCacheFileRepository,
 ) : ViewModel() {
+    // Get SnackBar host state from main activity
+    private val mainActivitySnackBarHostState: MutableState<SnackbarHostState?> = mutableStateOf(null)
+    fun setSnackBarHostState(item: SnackbarHostState) {
+        mainActivitySnackBarHostState.value = item
+    }
+
+    // Get context main activity
+    private val mainActivityContext: MutableState<Context?> = mutableStateOf(null)
+    fun setContext(item: Context) {
+        mainActivityContext.value = item
+    }
+
+    // News Details View when clicked a news.
+    internal val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
+    fun setNewsDetailClicked(item: NewsDetailsClicked) {
+        newsDetailsClicked.value = item
+    }
+
     // Exception will be saved here.
     private val exceptionCacheData: MutableState<ExceptionCacheData> = mutableStateOf(ExceptionCacheData())
 
-    // News Details View when clicked a news.
-    val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
-
-    // Account View.
-    // 0: Not logged in, 1: Login, 2: Logged In
-    val accountPaneIndex = mutableStateOf(0)
-
     // News data with cache (for easier manage).
-    private val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
-    val newsData: MutableState<NewsCacheData>
-        get() = newsCacheData
+    internal val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
 
     // Generate md5 from string.
     private fun md5(input: String): String {
@@ -44,17 +56,20 @@ class MainViewModel @Inject constructor(
 
     // Get news global.
     // Check if is getting news global
-    private val procGlobal: MutableState<Boolean> = mutableStateOf(false)
-    fun isProcessingNewsGlobal(): MutableState<Boolean> { return procGlobal }
+    internal val procGlobal: MutableState<Boolean> = mutableStateOf(false)
 
+    // Check if in startup in process global.
+    // Useful for prevent  auto refresh due to switch navigation.
     private val procGlobalInit: MutableState<Boolean> = mutableStateOf(true)
 
     // Refresh news global
     fun refreshNewsGlobalFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
-                if (!procGlobalInit.value && !force)
-                    throw Exception("App not forced. Set force to true to load.")
+                if (!procGlobalInit.value && !force) {
+                    Log.d("ProcGlobal", "App not forced. Set force to true to load.")
+                    return@launch
+                }
 
                 procGlobal.value = true
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
@@ -77,28 +92,40 @@ class MainViewModel @Inject constructor(
 
                     newsCacheFileRepo.setNewsGlobal(list)
                     newsCacheData.value.NewsGlobalData.value.addAll(list)
-                }
+                } else throw Exception("Empty news list")
+
+                procGlobal.value = false
+                procGlobalInit.value = false
             }
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("NewsGlobal", ex.message.toString())
+                ex.printStackTrace()
+                procGlobal.value = false
+                procGlobalInit.value = false
+
+                // Notify that can't load news here.
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
+                )
             }
-            procGlobal.value = false
-            procGlobalInit.value = false
         }
     }
 
     // Get news subjects
     // Check if is getting news subject
-    private val procSubjects: MutableState<Boolean> = mutableStateOf(false)
-    fun isProcessingNewsSubject(): MutableState<Boolean> { return procSubjects }
+    internal val procSubjects: MutableState<Boolean> = mutableStateOf(false)
+
+    // Check if in startup in process subject.
+    // Useful for prevent  auto refresh due to switch navigation.
 
     private val procSubjectsInit: MutableState<Boolean> = mutableStateOf(true)
     fun refreshNewsSubjectsFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
-                if (!procSubjectsInit.value && !force)
-                    throw Exception("App not forced. Set force to true to load.")
+                if (!procGlobalInit.value && !force) {
+                    Log.d("ProcGlobal", "App not forced. Set force to true to load.")
+                    return@launch
+                }
 
                 procSubjects.value = true
                 val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
@@ -119,108 +146,164 @@ class MainViewModel @Inject constructor(
 
                     newsCacheFileRepo.setNewsSubject(list)
                     newsCacheData.value.NewsSubjectData.value.addAll(list)
-                }
+                } else throw Exception("Empty news list")
+
+                procSubjects.value = false
+                procSubjectsInit.value = false
             }
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("NewsSubject", ex.message.toString())
+                ex.printStackTrace()
+                procSubjects.value = false
+                procSubjectsInit.value = false
+
+                // Notify that can't load news here.
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
+                )
             }
-            procSubjects.value = false
-            procSubjectsInit.value = false
         }
     }
 
+
+    // Account View.
+    // 0: Not logged in, 1: Login, 2: Logged In
+    internal val accountPaneIndex = mutableStateOf(0)
+
     // Account Information
-    private val accDataWithCache: MutableState<AccountCacheData> = mutableStateOf(
+    internal val accCacheData: MutableState<AccountCacheData> = mutableStateOf(
         AccountCacheData()
     )
-    val accountData: MutableState<AccountCacheData>
-        get() = accDataWithCache
 
-    // Login/logout
-    private val procAccount: MutableState<Boolean> = mutableStateOf(false)
-    fun isProcessingAccount(): MutableState<Boolean> {
-        return procAccount
-    }
+    // Check if have auto login
+    private val accLoginStartup = mutableStateOf(false)
+
+    // Log in using your account
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
+            // Navigate to page logging in
+            accountPaneIndex.value = 2
+
             try {
-                procAccount.value = true
-
+                // Login
                 val result = dutAccRepo.dutLogin(user, pass)
+                // If login successfully
                 if (result.loggedIn) {
-                    accDataWithCache.value.SessionID.value = result.sessionId!!
-                    appSettingsRepo.autoLogin = rememberLogin
-                    appSettingsRepo.username = user
-                    appSettingsRepo.password = pass
+                    // Save session id to cache
+                    accCacheData.value.sessionID.value = result.sessionId!!
 
-                    // Navigate to page logged in
-                    accountPaneIndex.value = 2
+                    // Only logged in will can remember login
+                    if (rememberLogin) {
+                        // Save to app settings
+                        appSettingsRepo.autoLogin = rememberLogin
+                        appSettingsRepo.username = user
+                        appSettingsRepo.password = pass
+                    }
 
+                    // Pre-load subject schedule, fee and account information
                     getSubjectScheduleAndFee(21, 2, false)
                     getAccountInformation()
                 }
             }
+            // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("Login", ex.message.toString())
+                ex.printStackTrace()
             }
-            procAccount.value = false
+
+            viewModelScope.launch {
+                // If logged in (check session id is not empty)
+                if (isLoggedIn()) {
+                    accountPaneIndex.value = 3
+                    // Navigate to page logged in
+                    mainActivitySnackBarHostState.value?.showSnackbar(
+                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
+                    )
+                }
+                // Any failed while logging in will be return to login/not logged in.
+                else if (!accLoginStartup.value) {
+                    accountPaneIndex.value = 1
+                    mainActivitySnackBarHostState.value?.showSnackbar(
+                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
+                    )
+                }
+                // If failed login at startup, will clear all auto login settings
+                // and return back to login page
+                else {
+                    accountPaneIndex.value = 0
+                    clearAutoLogin()
+                    mainActivitySnackBarHostState.value?.showSnackbar(
+                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
+                    )
+                }
+
+                accLoginStartup.value = false
+            }
         }
+    }
+
+    // Clear auto login settings
+    private fun clearAutoLogin() {
+        appSettingsRepo.autoLogin = false
+        appSettingsRepo.username = null
+        appSettingsRepo.password = null
     }
 
     fun logout() {
         viewModelScope.launch {
             try {
-                procAccount.value = true
-
-                appSettingsRepo.autoLogin = false
-                appSettingsRepo.username = null
-                appSettingsRepo.password = null
+                // Clear auto login settings
+                clearAutoLogin()
 
                 // Navigate to page not logged in
                 accountPaneIndex.value = 0
 
+                // Show snack bar logged out
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loggedout)!!
+                )
+
                 // Logout
-                val temp = accDataWithCache.value.SessionID.value
-                accDataWithCache.value.clearAllData()
+                val temp = accCacheData.value.sessionID.value
+                accCacheData.value.clearAllData()
                 dutAccRepo.dutLogout(temp)
             }
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 Log.d("Logout", ex.message.toString())
             }
-            procAccount.value = false
         }
     }
 
     fun isLoggedIn(): Boolean {
-        return (accDataWithCache.value.isStoringSessionID())
+        return (accCacheData.value.isStoringSessionID())
     }
 
     // Get subject schedule and subject fee
     fun getSubjectScheduleAndFee(year: Int, semester: Int, inSummer: Boolean) {
         viewModelScope.launch {
             try {
-                procAccount.value = true
-
+                // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
-                    accDataWithCache.value.SessionID.value, year, semester, inSummer)
+                    accCacheData.value.sessionID.value, year, semester, inSummer)
+                // Add to cache
                 if (dataSubjectScheduleFromInternet.scheduleList != null &&
                         dataSubjectScheduleFromInternet.scheduleList.size > 0)
-                    accDataWithCache.value.SubjectScheduleData.value = dataSubjectScheduleFromInternet.scheduleList
+                    accCacheData.value.subjectScheduleData.value = dataSubjectScheduleFromInternet.scheduleList
 
+                // Get subject fee
                 val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
-                    accDataWithCache.value.SessionID.value, year, semester, inSummer)
+                    accCacheData.value.sessionID.value, year, semester, inSummer)
+                // Add to cache
                 if (dataSubjectFeeFromInternet.feeList != null &&
                         dataSubjectFeeFromInternet.feeList.size > 0)
-                    accDataWithCache.value.SubjectFeeData.value = dataSubjectFeeFromInternet.feeList
+                    accCacheData.value.subjectFeeData.value = dataSubjectFeeFromInternet.feeList
             }
+            // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("SubjectScheduleFee", ex.message.toString())
+                ex.printStackTrace()
             }
-            procAccount.value = false
         }
     }
 
@@ -228,31 +311,31 @@ class MainViewModel @Inject constructor(
     fun getAccountInformation() {
         viewModelScope.launch {
             try {
-                procAccount.value = true
-
+                // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
-                    accDataWithCache.value.SessionID.value)
+                    accCacheData.value.sessionID.value)
+                // Add to cache
                 if (dataAccInfoFromInternet.accountInfo != null)
-                    accDataWithCache.value.AccountInformationData.value = dataAccInfoFromInternet.accountInfo
+                    accCacheData.value.accountInformationData.value = dataAccInfoFromInternet.accountInfo
             }
+            // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
-                Log.d("AccInfo", ex.message.toString())
+                ex.printStackTrace()
             }
-            procAccount.value = false
         }
     }
 
     // Load settings from appSettings.json.
     private fun loadSettings() {
         viewModelScope.launch {
-            // Load all old news
+            // Load news cache for backup if internet is not available.
             newsCacheData.value.NewsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
             newsCacheData.value.NewsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
 
-            // Detect auto login
+            // Detect auto login (login if user checked auto login check box)
             if (appSettingsRepo.autoLogin) {
-                Log.d("AutoLogin", "AutoLoginTriggered")
+                accLoginStartup.value = true
                 if (appSettingsRepo.username != null && appSettingsRepo.password != null)
                     login(appSettingsRepo.username!!, appSettingsRepo.password!!)
             }
@@ -262,8 +345,7 @@ class MainViewModel @Inject constructor(
     init {
         // Load settings first before continue.
         loadSettings()
-        // Load news cache for backup if internet is not available.
-//        getNewsCacheFromDb()
+
         // Auto refresh news in server at startup.
         refreshNewsGlobalFromServer()
         refreshNewsSubjectsFromServer()

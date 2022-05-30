@@ -59,14 +59,16 @@ fun Subjects(mainViewModel: MainViewModel) {
                     index ->
                 when (index) {
                     0 -> {
-                        if (mainViewModel.isProcessingAccount().value)
-                            SubjectsLoadingScreen()
-                        else SubjectsStudy(subjectListItem = mainViewModel.accountData.value.SubjectScheduleData.value)
+                        // if (mainViewModel.isLoggedIn())
+                        //     SubjectsLoadingScreen()
+                        // else
+                            SubjectsStudy(subjectListItem = mainViewModel.accCacheData.value.subjectScheduleData.value)
                     }
                     1 -> {
-                        if (mainViewModel.isProcessingAccount().value)
-                            SubjectsLoadingScreen()
-                        else SubjectsFee(subjectListItem = mainViewModel.accountData.value.SubjectFeeData.value)
+                        // if (mainViewModel.isLoggedIn().value)
+                        //     SubjectsLoadingScreen()
+                        //else
+                            SubjectsFee(subjectListItem = mainViewModel.accCacheData.value.subjectFeeData.value)
                     }
                 }
             }

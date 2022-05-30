@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -15,7 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,20 +56,24 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
     val mainViewModel = viewModel<MainViewModel>()
-
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
+    val snackBarHostState = remember { SnackbarHostState() }
 
-    mainViewModel.newsDetailsClicked.value = NewsDetailsClicked(
+    mainViewModel.setNewsDetailClicked(NewsDetailsClicked(
         showSheetRequested = {
             scope.launch { sheetState.show() }
         },
         hideSheetRequested = {
             scope.launch { sheetState.hide() }
         }
-    )
+    ))
+    mainViewModel.setSnackBarHostState(snackBarHostState)
+    mainViewModel.setContext(LocalContext.current)
 
-    // https://stackoverflow.com/a/69052933
+    // Best solution (at this time): https://stackoverflow.com/a/69052933
+    // However, this isn't a good idea, because animation will be executed for 1s.
+    // So, we won't able to manage this here!
     LaunchedEffect(Unit) {
         snapshotFlow { sheetState.currentValue }
             .collect {
@@ -81,11 +84,10 @@ fun MainScreen() {
 
     ModalBottomSheetLayout(
         sheetState = sheetState,
-        // https://stackoverflow.com/a/68608137
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
         sheetContent = {
-            when(mainViewModel.newsDetailsClicked.value!!.NewsType.value) {
+            when(mainViewModel.newsDetailsClicked.value!!.newsType.value) {
                 0 -> NewsGlobalDetails(
                     newsGlobalItem = mainViewModel.newsDetailsClicked.value!!.newsGlobal.value
                 )
@@ -97,6 +99,7 @@ fun MainScreen() {
         }
     ) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackBarHostState) },
 //            topBar = {
 //                CenterAlignedTopAppBar(
 //                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
@@ -131,11 +134,9 @@ fun NavigationHost(
         }
 
         composable(NavRoutes.News.route) {
-            // If sheet still display, hide them
-            // else will return to main screen.
-            // https://stackoverflow.com/a/70376447
+            // If sheet still display, hide them, else will return to main screen.
             BackHandler(
-                enabled = (mainViewModel.newsDetailsClicked.value!!.NewsType.value != -1),
+                enabled = (mainViewModel.newsDetailsClicked.value!!.newsType.value != -1),
                 onBack = { mainViewModel.newsDetailsClicked.value!!.hideViewDetails() },
             )
             News(mainViewModel = mainViewModel)
@@ -146,9 +147,7 @@ fun NavigationHost(
         }
 
         composable(NavRoutes.Account.route) {
-            // If still in Login, roll back to Not Logged In,
-            // else will return to main screen.
-            // https://stackoverflow.com/a/70376447
+            // If still in Login, roll back to Not Logged In, else will return to main screen.
             BackHandler(
                 enabled = (mainViewModel.accountPaneIndex.value == 1),
                 onBack = {

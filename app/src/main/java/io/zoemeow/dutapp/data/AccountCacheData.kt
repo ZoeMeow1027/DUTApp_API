@@ -10,38 +10,41 @@ class AccountCacheData() {
     private var dataInfo: MutableState<AccountInformationItem> = mutableStateOf(AccountInformationItem())
     private var dataSubjectSchedule: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(ArrayList())
     private var dataSubjectFee: MutableState<ArrayList<SubjectFeeItem>> = mutableStateOf(ArrayList())
-    private var sessionID: MutableState<String> = mutableStateOf(String())
 
-    var SubjectScheduleData: MutableState<ArrayList<SubjectScheduleItem>>
+    @Transient
+    private var sessionIDPri: MutableState<String> = mutableStateOf(String())
+
+    var sessionID: MutableState<String>
+        get() = sessionIDPri
+        set(value) { sessionIDPri.value = value.value }
+
+    fun isStoringSessionID(): Boolean {
+        return sessionIDPri.value.isNotEmpty()
+    }
+
+    var subjectScheduleData: MutableState<ArrayList<SubjectScheduleItem>>
         get() = dataSubjectSchedule
         set(value) {
             dataSubjectSchedule.value.clear()
             dataSubjectSchedule.value.addAll(value.value)
         }
 
-    var SubjectFeeData: MutableState<ArrayList<SubjectFeeItem>>
+    var subjectFeeData: MutableState<ArrayList<SubjectFeeItem>>
         get() = dataSubjectFee
         set(value) {
             dataSubjectFee.value.clear()
             dataSubjectFee.value.addAll(value.value)
         }
 
-    var AccountInformationData: MutableState<AccountInformationItem>
+    var accountInformationData: MutableState<AccountInformationItem>
         get() = dataInfo
         set(value) { dataInfo.value = value.value }
-
-    var SessionID: MutableState<String>
-        get() = sessionID
-        set(value) { sessionID.value = value.value }
 
     fun clearAllData() {
         dataInfo.value = AccountInformationItem()
         dataSubjectSchedule.value.clear()
         dataSubjectFee.value.clear()
-        sessionID.value = String()
+        sessionIDPri.value = String()
     }
 
-    fun isStoringSessionID(): Boolean {
-        return sessionID.value.isNotEmpty()
-    }
 }
