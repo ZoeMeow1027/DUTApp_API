@@ -5,7 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.zoemeow.dutapp.network.DutFuncApi
-import io.zoemeow.dutapp.data.repository.DutNewsRepository
+import io.zoemeow.dutapp.repository.DutNewsRepository
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton

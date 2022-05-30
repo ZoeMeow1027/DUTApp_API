@@ -1,5 +1,7 @@
 package io.zoemeow.dutapp.model
 
+import com.google.gson.annotations.SerializedName
+
 data class SubjectScheduleItem(
     val ID: String? = null,
     val Name: String? = null,
@@ -8,7 +10,9 @@ data class SubjectScheduleItem(
     val Lecturer: String? = null,
     val ScheduleStudy: String? = null,
     val Weeks: String? = null,
-    val PointFomula: String? = null,
+
+    @SerializedName("PointFomula")
+    val PointFormula: String? = null,
     val GroupExam: String? = null,
     val IsGlobalExam: Boolean? = null,
     val DateExam: Long? = null,

@@ -1,8 +1,16 @@
 package io.zoemeow.dutapp.model
 
+import com.google.gson.annotations.SerializedName
+
 data class SubjectFeeListItem(
     val date: Long? = null,
-    val totalcredit: Int? = null,
-    val totalmoney: Int? = null,
-    val feelist: ArrayList<SubjectFeeItem>? = null
+
+    @SerializedName("totalcredit")
+    val totalCredit: Int? = null,
+
+    @SerializedName("totalmoney")
+    val totalMoney: Int? = null,
+
+    @SerializedName("feelist")
+    val feeList: ArrayList<SubjectFeeItem>? = null
 )

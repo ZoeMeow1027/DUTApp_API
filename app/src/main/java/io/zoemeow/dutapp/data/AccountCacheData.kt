@@ -6,7 +6,7 @@ import io.zoemeow.dutapp.model.AccountInformationItem
 import io.zoemeow.dutapp.model.SubjectFeeItem
 import io.zoemeow.dutapp.model.SubjectScheduleItem
 
-class AccountDataWithCache() {
+class AccountCacheData() {
     private var dataInfo: MutableState<AccountInformationItem> = mutableStateOf(AccountInformationItem())
     private var dataSubjectSchedule: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(ArrayList())
     private var dataSubjectFee: MutableState<ArrayList<SubjectFeeItem>> = mutableStateOf(ArrayList())

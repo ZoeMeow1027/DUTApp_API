@@ -1,7 +1,13 @@
 package io.zoemeow.dutapp.model
 
+import com.google.gson.annotations.SerializedName
+
 data class NewsSubjectListItem(
     val date: Long? = null,
-    val newstype: String? = null,
-    val newslist: ArrayList<NewsSubjectItem>? = null
+
+    @SerializedName("newstype")
+    val newsType: String? = null,
+
+    @SerializedName("newslist")
+    val newsList: ArrayList<NewsSubjectItem>? = null
 )

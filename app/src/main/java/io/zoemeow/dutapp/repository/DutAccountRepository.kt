@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.data.repository
+package io.zoemeow.dutapp.repository
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -14,7 +14,7 @@ class DutAccountRepository @Inject constructor(private val api: DutFuncApi) {
 
     // Login/Logout
     suspend fun dutLogin(user: String, pass: String): LoginStatus {
-        var result = LoginStatus(loggedin = false)
+        var result = LoginStatus(loggedIn = false)
 
         try {
             result = api.dutLogin(user, pass)
@@ -26,7 +26,7 @@ class DutAccountRepository @Inject constructor(private val api: DutFuncApi) {
     }
 
     suspend fun dutLogout(sid: String): LoginStatus {
-        var result = LoginStatus(loggedin = false)
+        var result = LoginStatus(loggedIn = false)
 
         try {
             result = api.dutLogout(sid)

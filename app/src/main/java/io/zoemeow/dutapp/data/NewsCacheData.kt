@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import io.zoemeow.dutapp.model.NewsGlobalItem
 import io.zoemeow.dutapp.model.NewsSubjectItem
 
-class NewsDataWithCache() {
+class NewsCacheData() {
     private var dataGlobal: MutableState<ArrayList<NewsGlobalItem>> = mutableStateOf(ArrayList())
     private var dataSubject: MutableState<ArrayList<NewsSubjectItem>> = mutableStateOf(ArrayList())
 

@@ -3,7 +3,6 @@ package io.zoemeow.dutapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,8 +18,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -100,12 +97,12 @@ fun MainScreen() {
         }
     ) {
         Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
-                )
-            },
+//            topBar = {
+//                CenterAlignedTopAppBar(
+//                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
+//                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
+//                )
+//            },
             bottomBar = { BottomNavigationBar(navController = navController) },
             content = { contentPadding ->
                 NavigationHost(
