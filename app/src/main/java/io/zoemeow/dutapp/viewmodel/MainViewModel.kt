@@ -339,28 +339,38 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Load settings from appSettings.json.
-    private fun loadSettings() {
-        viewModelScope.launch {
-            // Load news cache for backup if internet is not available.
-            newsCacheData.value.NewsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
-            newsCacheData.value.NewsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
+    // Load news cache for backup if internet is not available.
+    private fun loadCache() {
+        newsCacheData.value.NewsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
+        newsCacheData.value.NewsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
+    }
 
-            // Detect auto login (login if user checked auto login check box)
-            if (appSettingsRepo.autoLogin) {
-                accLoginStartup.value = true
-                if (appSettingsRepo.username != null && appSettingsRepo.password != null)
-                    login(appSettingsRepo.username!!, appSettingsRepo.password!!)
-            }
+    // Detect auto login (login if user checked auto login check box)
+    private fun executeAutoLogin() {
+        if (appSettingsRepo.autoLogin) {
+            accLoginStartup.value = true
+            if (appSettingsRepo.username != null && appSettingsRepo.password != null)
+                login(appSettingsRepo.username!!, appSettingsRepo.password!!)
         }
     }
 
+    // Load settings from appSettings.json.
+    private fun loadSettings() {
+
+    }
+
     init {
+        // Load news cache for backup if internet is not available.
+        loadCache()
+
         // Load settings first before continue.
         loadSettings()
 
         // Auto refresh news in server at startup.
         refreshNewsGlobalFromServer()
         refreshNewsSubjectsFromServer()
+
+        // Detect auto login (login if user checked auto login check box)
+        executeAutoLogin()
     }
 }
