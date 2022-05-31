@@ -20,9 +20,9 @@ object NavBarItemObject {
             route = "subject"
         ),
         NavBarItems(
-            title = "Account",
-            imageId = R.drawable.ic_baseline_accountcircle_24,
-            route = "account"
+            title = "Settings",
+            imageId = R.drawable.ic_baseline_settings_24,
+            route = "settings"
         )
     )
 }

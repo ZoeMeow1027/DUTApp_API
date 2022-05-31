@@ -1,6 +1,7 @@
 package io.zoemeow.dutapp.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,50 +29,63 @@ import io.zoemeow.dutapp.model.AccountInformationItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
-fun Account(mainViewModel: MainViewModel) {
+fun Settings(mainViewModel: MainViewModel) {
     when (mainViewModel.accountPaneIndex.value) {
-        0 -> AccountPageNotLoggedIn(
-            loginRequest = {
-                mainViewModel.accountPaneIndex.value = 1
-            }
-        )
+        0 -> SettingsPreview(mainViewModel)
         1 -> AccountPageLogin(
             mainViewModel = mainViewModel,
-            backRequest = {
-                mainViewModel.accountPaneIndex.value = 0
-            },
+            backRequest = { mainViewModel.accountPaneIndex.value = 0 }
         )
         2 -> AccountPageLoggingIn()
-        3 -> when (mainViewModel.procAccInfo.value) {
-            true -> AccountPageLoadingYourInfo()
-            false -> AccountPageLoggedIn(
-                accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
-                logout = { mainViewModel.logout() }
-            )
+        3 -> AccountPageInformation(
+            accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
+            isLoading = mainViewModel.procAccInfo.value,
+            logout = { mainViewModel.logout() }
+        )
+    }
+}
+
+@Composable
+fun SettingsPreview(mainViewModel: MainViewModel) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(20.dp)) {
+        // Login
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .clip(RoundedCornerShape(10.dp))
+                .border(2.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(10.dp))
+                .clickable {
+                    if (mainViewModel.accCacheData.value.sessionID.value.isNotEmpty())
+                        mainViewModel.accountPaneIndex.value = 3
+                    else mainViewModel.accountPaneIndex.value = 1
+                }
+        ) {
+            if (!mainViewModel.accCacheData.value.sessionID.value.isNotEmpty()) AccountTagNotLoggedIn()
+            else AccountTagLoggedIn(id = mainViewModel.accCacheData.value.accountInformationData.value.studentId ?: String())
         }
     }
 }
 
 @Composable
-fun AccountPageNotLoggedIn(loginRequest: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-        Surface(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                Text(
-                    text = stringResource(id = R.string.navlogin_screennotloggedin_text1),
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = stringResource(id = R.string.navlogin_screennotloggedin_text2),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-        Spacer(modifier = Modifier.size(15.dp))
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = loginRequest,
-            content = { Text(stringResource(id = R.string.navlogin_screennotloggedin_btnlogin)) },
+fun AccountTagNotLoggedIn() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(15.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(id = R.string.navlogin_screennotloggedin_text1),
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.size(5.dp))
+        Text(
+            text = stringResource(id = R.string.navlogin_screennotloggedin_text2),
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
@@ -98,7 +112,9 @@ fun AccountPageLogin(
         content = { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(20.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                         .navigationBarsPadding()
                         .wrapContentHeight(),
                     verticalArrangement = Arrangement.Top,
@@ -171,6 +187,27 @@ fun AccountPageLogin(
 }
 
 @Composable
+fun AccountTagLoggedIn(id: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(15.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = id,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.size(5.dp))
+        Text(
+            text = "Tap here to view your info or logout your account.",
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
 fun AccountPageLoggingIn() {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -193,6 +230,109 @@ fun AccountPageLoggingIn() {
                     .padding(start = 90.dp, end = 90.dp)
             )
         }
+    }
+}
+
+@Composable
+fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, logout: () -> Unit) {
+    val openDialog = remember { mutableStateOf(false) }
+
+    if (isLoading) AccountPageLoadingYourInfo()
+    else {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text(
+                        text = accInfo.name ?: String(),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    Spacer(modifier = Modifier.size(5.dp))
+                    Text(
+                        text = accInfo.studentId ?: String(),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = accInfo.specialization ?: String(),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+
+            data class AccInfoItem(
+                val key: String,
+                val value: String,
+            )
+            val list: ArrayList<AccInfoItem> = arrayListOf(
+                AccInfoItem("Class", accInfo.schoolClass ?: String()),
+                AccInfoItem("School Email", accInfo.schoolEmail ?: String()),
+                AccInfoItem("Email", accInfo.personalEmail ?: String()),
+                AccInfoItem("Facebook URL", accInfo.facebookUrl ?: String()),
+                AccInfoItem("Phone Number", accInfo.phoneNumber ?: String()),
+            )
+
+            Spacer(modifier = Modifier.size(20.dp))
+            LazyColumn {
+                items(list) { item ->
+                    Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 10.dp, end = 10.dp)) {
+                        Text(
+                            text = item.key,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Spacer(modifier = Modifier.size(3.dp))
+                        Text(
+                            text = item.value,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.size(20.dp))
+            Button(onClick = { openDialog.value = true }) {
+                Text(stringResource(id = R.string.navlogin_loggedin_btnlogout))
+            }
+        }
+    }
+
+    if (openDialog.value) {
+        AlertDialog(
+            modifier = Modifier.padding(15.dp),
+            onDismissRequest = { openDialog.value = false },
+            title = { Text("Logout") },
+            text = { Text(text = "Are you sure you want to logout?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        openDialog.value = false
+                        logout()
+                    },
+                    content = {
+                        Text("Yes, log me out")
+                    }
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { openDialog.value = false },
+                    content = {
+                        Text("No")
+                    }
+                )
+            }
+        )
     }
 }
 
@@ -221,72 +361,3 @@ fun AccountPageLoadingYourInfo() {
         }
     }
 }
-
-@Composable
-fun AccountPageLoggedIn(accInfo: AccountInformationItem, logout: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
-                .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = accInfo.name ?: String(),
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Spacer(modifier = Modifier.size(5.dp))
-                Text(
-                    text = accInfo.studentId ?: String(),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = accInfo.specialization ?: String(),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        }
-
-        data class AccInfoItem(
-            val key: String,
-            val value: String,
-        )
-        val list: ArrayList<AccInfoItem> = arrayListOf(
-            AccInfoItem("Class", accInfo.schoolClass ?: String()),
-            AccInfoItem("School Email", accInfo.schoolEmail ?: String()),
-            AccInfoItem("Email", accInfo.personalEmail ?: String()),
-            AccInfoItem("Facebook URL", accInfo.facebookUrl ?: String()),
-            AccInfoItem("Phone Number", accInfo.phoneNumber ?: String()),
-        )
-
-        Spacer(modifier = Modifier.size(20.dp))
-        LazyColumn {
-            items(list) { item ->
-                Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 10.dp, end = 10.dp)) {
-                    Text(
-                        text = item.key,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(modifier = Modifier.size(3.dp))
-                    Text(
-                        text = item.value,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.size(20.dp))
-        Button(onClick = logout) {
-            Text(stringResource(id = R.string.navlogin_loggedin_btnlogout))
-        }
-    }
-}
-

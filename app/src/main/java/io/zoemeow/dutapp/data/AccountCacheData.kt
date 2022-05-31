@@ -16,11 +16,9 @@ class AccountCacheData() {
 
     var sessionID: MutableState<String>
         get() = sessionIDPri
-        set(value) { sessionIDPri.value = value.value }
-
-    fun isStoringSessionID(): Boolean {
-        return sessionIDPri.value.isNotEmpty()
-    }
+        set(value) {
+            sessionIDPri.value = value.value
+        }
 
     var subjectScheduleData: MutableState<ArrayList<SubjectScheduleItem>>
         get() = dataSubjectSchedule

@@ -6,7 +6,7 @@ import io.zoemeow.dutapp.model.NewsSubjectListItem
 import io.zoemeow.dutapp.network.DutFuncApi
 import javax.inject.Inject
 
-class DutNewsRepository @Inject constructor(private val api: DutFuncApi) {
+class DutNewsApiRepository @Inject constructor(private val api: DutFuncApi) {
     private var ex: Exception? = null
 
     // Get news global

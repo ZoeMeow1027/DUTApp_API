@@ -106,7 +106,7 @@ fun MainScreen() {
 //                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
 //                )
 //            },
-            bottomBar = { BottomNavigationBar(loggedIn = mainViewModel.isLoggedIn(), navController = navController) },
+            bottomBar = { BottomNavigationBar(navController = navController) },
             content = { contentPadding ->
                 NavigationHost(
                     navController = navController,
@@ -146,22 +146,22 @@ fun NavigationHost(
             Subjects(mainViewModel = mainViewModel)
         }
 
-        composable(NavRoutes.Account.route) {
+        composable(NavRoutes.Settings.route) {
             // If still in Login, roll back to Not Logged In, else will return to main screen.
             BackHandler(
-                enabled = (mainViewModel.accountPaneIndex.value == 1),
+                enabled = (mainViewModel.accountPaneIndex.value != 0),
                 onBack = {
-                    if (mainViewModel.accountPaneIndex.value == 1)
+                    if (mainViewModel.accountPaneIndex.value != 2)
                         mainViewModel.accountPaneIndex.value = 0
                 }
             )
-            Account(mainViewModel = mainViewModel)
+            Settings(mainViewModel = mainViewModel)
         }
     }
 }
 
 @Composable
-fun BottomNavigationBar(loggedIn: Boolean, navController: NavHostController) {
+fun BottomNavigationBar(navController: NavHostController) {
     NavigationBar {
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
@@ -182,14 +182,7 @@ fun BottomNavigationBar(loggedIn: Boolean, navController: NavHostController) {
                 },
                 icon = {
                     Icon(
-                        imageVector = (
-                                if (navItem.route == "account") {
-                                    if (loggedIn)
-                                        ImageVector.vectorResource(id = R.drawable.ic_baseline_accountcircle_24)
-                                    else ImageVector.vectorResource(id = R.drawable.ic_baseline_noaccountcircle_24)
-                                }
-                                else ImageVector.vectorResource(id = navItem.imageId)
-                        ),
+                        imageVector = ImageVector.vectorResource(id = navItem.imageId),
                         contentDescription = navItem.title
                     )
                 },

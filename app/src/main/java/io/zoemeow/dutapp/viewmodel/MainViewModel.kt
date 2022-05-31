@@ -19,8 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val dutNewsRepo: DutNewsRepository,
-    private val dutAccRepo: DutAccountRepository,
+    private val dutNewsRepo: DutNewsApiRepository,
+    private val dutAccRepo: DutAccountApiRepository,
     private val appSettingsRepo: AppSettingsFileRepository,
     private val newsCacheFileRepo: NewsCacheFileRepository,
 ) : ViewModel() {
@@ -166,11 +166,14 @@ class MainViewModel @Inject constructor(
     }
 
 
-    // Account View.
-    // 0: Not logged in, 1: Login, 2: Logged In
+    // Settings View.
+    // 0: Settings (and/or not logged in page)
+    // 1: Login page
+    // 2: Logging in page
+    // 3: Account Information page
     internal val accountPaneIndex = mutableStateOf(0)
 
-    // Account Information
+    // Settings Information
     internal val accCacheData: MutableState<AccountCacheData> = mutableStateOf(
         AccountCacheData()
     )
@@ -187,6 +190,7 @@ class MainViewModel @Inject constructor(
             try {
                 // Login
                 val result = dutAccRepo.dutLogin(user, pass)
+
                 // If login successfully
                 if (result.loggedIn) {
                     // Save session id to cache
@@ -211,33 +215,32 @@ class MainViewModel @Inject constructor(
                 ex.printStackTrace()
             }
 
-            viewModelScope.launch {
-                // If logged in (check session id is not empty)
-                if (isLoggedIn()) {
-                    accountPaneIndex.value = 3
-                    // Navigate to page logged in
-                    mainActivitySnackBarHostState.value?.showSnackbar(
-                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
-                    )
-                }
-                // Any failed while logging in will be return to login/not logged in.
-                else if (!accLoginStartup.value) {
-                    accountPaneIndex.value = 1
-                    mainActivitySnackBarHostState.value?.showSnackbar(
-                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
-                    )
-                }
-                // If failed login at startup, will clear all auto login settings
-                // and return back to login page
-                else {
-                    accountPaneIndex.value = 0
-                    clearAutoLogin()
-                    mainActivitySnackBarHostState.value?.showSnackbar(
-                        mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
-                    )
-                }
+            // All result will be returned to main page.
+            accountPaneIndex.value = 0
 
+            // If logged in (check session id is not empty)
+            if (accCacheData.value.sessionID.value.isNotEmpty()) {
+                // Navigate to page logged in
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
+                )
+            }
+            // If failed login at startup, will clear all auto login settings
+            // and return back to login page
+            else if (accLoginStartup.value) {
+                accountPaneIndex.value = 0
+                clearAutoLogin()
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
+                )
                 accLoginStartup.value = false
+            }
+            // Any failed while logging in will be return to login/not logged in.
+            else {
+                accountPaneIndex.value = 1
+                mainActivitySnackBarHostState.value?.showSnackbar(
+                    mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
+                )
             }
         }
     }
@@ -255,6 +258,10 @@ class MainViewModel @Inject constructor(
                 // Clear auto login settings
                 clearAutoLogin()
 
+                // Get information before logout
+                val temp = accCacheData.value.sessionID.value
+                accCacheData.value.clearAllData()
+
                 // Navigate to page not logged in
                 accountPaneIndex.value = 0
 
@@ -264,8 +271,6 @@ class MainViewModel @Inject constructor(
                 )
 
                 // Logout
-                val temp = accCacheData.value.sessionID.value
-                accCacheData.value.clearAllData()
                 dutAccRepo.dutLogout(temp)
             }
             catch (ex: Exception) {
@@ -273,10 +278,6 @@ class MainViewModel @Inject constructor(
                 ex.printStackTrace()
             }
         }
-    }
-
-    fun isLoggedIn(): Boolean {
-        return (accCacheData.value.isStoringSessionID())
     }
 
     internal var procSubjectSchedule = mutableStateOf(false)
