@@ -31,7 +31,7 @@ import io.zoemeow.dutapp.viewmodel.MainViewModel
 @Composable
 fun Settings(mainViewModel: MainViewModel) {
     when (mainViewModel.accountPaneIndex.value) {
-        0 -> SettingsPreview(mainViewModel)
+        0 -> SettingsAccountTag(mainViewModel)
         1 -> AccountPageLogin(
             mainViewModel = mainViewModel,
             backRequest = { mainViewModel.accountPaneIndex.value = 0 }
@@ -46,7 +46,7 @@ fun Settings(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun SettingsPreview(mainViewModel: MainViewModel) {
+fun SettingsAccountTag(mainViewModel: MainViewModel) {
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(20.dp)) {
@@ -54,8 +54,8 @@ fun SettingsPreview(mainViewModel: MainViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
                 .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
                 .border(2.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(10.dp))
                 .clickable {
                     if (mainViewModel.accCacheData.value.sessionID.value.isNotEmpty())
@@ -246,7 +246,7 @@ fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(150.dp)
                     .clip(RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
             ) {
