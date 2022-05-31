@@ -9,7 +9,7 @@ import io.zoemeow.dutapp.model.SubjectScheduleListItem
 import io.zoemeow.dutapp.network.DutFuncApi
 import javax.inject.Inject
 
-class DutAccountRepository @Inject constructor(private val api: DutFuncApi) {
+class DutAccountApiRepository @Inject constructor(private val api: DutFuncApi) {
     private val ex: MutableState<Exception> = mutableStateOf(Exception())
 
     // Login/Logout
@@ -73,7 +73,7 @@ class DutAccountRepository @Inject constructor(private val api: DutFuncApi) {
         return subjectFeeData
     }
 
-    // Account information
+    // Settings information
     private var accountInformation = AccountInformationMainItem()
     suspend fun dutGetAccInfo(sid: String): AccountInformationMainItem {
         try {

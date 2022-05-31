@@ -20,7 +20,7 @@
 
     <!-- Login page -->
     <string name="navlogin_screennotloggedin_text1">You are not logged in.</string>
-    <string name="navlogin_screennotloggedin_text2">Login to access more features, just for you :).</string>
+    <string name="navlogin_screennotloggedin_text2">Tap here to login using your account.</string>
     <string name="navlogin_screennotloggedin_btnlogin">Login</string>
     <string name="navlogin_screenlogin_title">Login</string>
     <string name="navlogin_screenlogin_username">Username</string>
