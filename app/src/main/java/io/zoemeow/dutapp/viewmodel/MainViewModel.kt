@@ -181,11 +181,14 @@ class MainViewModel @Inject constructor(
     // Check if have auto login
     private val accLoginStartup = mutableStateOf(false)
 
+    internal val procLogin = mutableStateOf(false)
+
     // Log in using your account
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             // Navigate to page logging in
             accountPaneIndex.value = 2
+            procLogin.value = true
 
             try {
                 // Login
@@ -217,6 +220,7 @@ class MainViewModel @Inject constructor(
 
             // All result will be returned to main page.
             accountPaneIndex.value = 0
+            procLogin.value = false
 
             // If logged in (check session id is not empty)
             if (accCacheData.value.sessionID.value.isNotEmpty()) {
