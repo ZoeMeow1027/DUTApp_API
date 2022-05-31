@@ -28,10 +28,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
-    when (mainViewModel.accountPaneIndex.value) {
-        0, 1 -> SubjectsNotLoggedIn()
-        2 -> AccountPageLoggingIn()
-        3 -> when (mainViewModel.procSubjectSchedule.value) {
+    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
+        if (mainViewModel.procLogin.value)
+            AccountPageLoggingIn()
+        else SubjectsNotLoggedIn()
+    }
+    else {
+        when (mainViewModel.procSubjectSchedule.value) {
             true -> SubjectsLoadingSubject()
             false -> SubjectsLoggedIn(
                 mainViewModel.accCacheData.value,
