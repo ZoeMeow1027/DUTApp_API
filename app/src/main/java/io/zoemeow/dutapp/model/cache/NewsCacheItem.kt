@@ -1,4 +1,7 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.cache
+
+import io.zoemeow.dutapp.model.news.NewsGlobalItem
+import io.zoemeow.dutapp.model.news.NewsSubjectItem
 
 data class NewsCacheItem(
     var newsGlobalUpdateTime: Long = 0,

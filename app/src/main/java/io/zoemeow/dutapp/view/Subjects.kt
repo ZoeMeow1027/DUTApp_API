@@ -20,8 +20,8 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.AccountCacheData
-import io.zoemeow.dutapp.model.SubjectFeeItem
-import io.zoemeow.dutapp.model.SubjectScheduleItem
+import io.zoemeow.dutapp.model.subject.SubjectFeeItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 import io.zoemeow.dutapp.pagerTabIndicatorOffset
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -29,18 +29,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
     if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) {
-        if (mainViewModel.procLogin.value)
+        if (mainViewModel.isProcessingLogin.value)
             AccountPageLoggingIn()
         else SubjectsNotLoggedIn()
     }
     else {
-        when (mainViewModel.procSubjectSchedule.value) {
+        when (mainViewModel.isProcessingSubjectScheduleFee.value) {
             true -> SubjectsLoadingSubject()
             false -> SubjectsLoggedIn(
                 mainViewModel.accCacheData.value,
-                refreshRequest = {
-                    mainViewModel.getSubjectScheduleAndFee(21, 2, false)
-                }
+                refreshRequest = { mainViewModel.refreshSubjectScheduleAndFee() }
             )
         }
     }

@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.news
 
 import com.google.gson.annotations.SerializedName
 

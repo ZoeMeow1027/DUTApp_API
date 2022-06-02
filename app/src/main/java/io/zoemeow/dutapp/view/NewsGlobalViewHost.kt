@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import io.zoemeow.dutapp.model.NewsGlobalItem
+import io.zoemeow.dutapp.model.news.NewsGlobalItem
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.NewsCacheData
 import io.zoemeow.dutapp.data.NewsDetailsClicked
@@ -57,7 +56,7 @@ fun NewsGlobalViewHost(
             refreshRequired()
         }
     ) {
-        if (data.value.NewsGlobalData.value.size == 0) {
+        if (data.value.newsGlobalData.value.size == 0) {
             swipeRefreshState.isRefreshing = isLoading.value
 
             val loadingText = arrayOf("Loading data from server\nPlease wait...")
@@ -76,7 +75,7 @@ fun NewsGlobalViewHost(
             swipeRefreshState.isRefreshing = false
             NewsGlobalLoadList(
                 newsDetailsClicked = newsDetailsClicked,
-                data.value.NewsGlobalData.value,
+                data.value.newsGlobalData.value,
             )
         }
     }

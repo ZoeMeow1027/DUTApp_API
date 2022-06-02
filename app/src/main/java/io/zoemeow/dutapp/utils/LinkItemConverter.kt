@@ -3,8 +3,7 @@ package io.zoemeow.dutapp.utils
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import io.zoemeow.dutapp.model.LinkItem
-import io.zoemeow.dutapp.model.NewsGlobalItem
+import io.zoemeow.dutapp.model.news.LinkItem
 import kotlin.collections.ArrayList
 
 class LinkItemConverter {

@@ -5,5 +5,6 @@ class ExceptionCacheData {
 
     fun addException(ex: Exception) {
         this.ex.add(ex)
+        ex.printStackTrace()
     }
 }

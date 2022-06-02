@@ -1,4 +1,8 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.cache
+
+import io.zoemeow.dutapp.model.account.AccountInformationItem
+import io.zoemeow.dutapp.model.subject.SubjectFeeItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 
 data class SubjectCacheItem(
     var accountInformationUpdateTime: Long = 0,

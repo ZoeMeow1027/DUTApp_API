@@ -1,6 +1,11 @@
 package io.zoemeow.dutapp.network
 
-import io.zoemeow.dutapp.model.*
+import io.zoemeow.dutapp.model.account.AccountInformationMainItem
+import io.zoemeow.dutapp.model.account.LoginStatus
+import io.zoemeow.dutapp.model.news.NewsGlobalListItem
+import io.zoemeow.dutapp.model.news.NewsSubjectListItem
+import io.zoemeow.dutapp.model.subject.SubjectFeeListItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleListItem
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query

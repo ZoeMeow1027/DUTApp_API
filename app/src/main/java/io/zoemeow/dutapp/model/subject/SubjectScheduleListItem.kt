@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.subject
 
 import com.google.gson.annotations.SerializedName
 

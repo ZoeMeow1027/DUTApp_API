@@ -61,15 +61,15 @@ fun News(mainViewModel: MainViewModel) {
                 when (index) {
                     0 -> NewsGlobalViewHost(
                         newsDetailsClicked = mainViewModel.newsDetailsClicked,
-                        isLoading = mainViewModel.procGlobal,
+                        isLoading = mainViewModel.isProcessingGlobal,
                         data = mainViewModel.newsCacheData,
-                        refreshRequired = { mainViewModel.refreshNewsGlobalFromServer(force = true) },
+                        refreshRequired = { mainViewModel.refreshNewsGlobalFromServer() },
                     )
                     1 -> NewsSubjectViewHost(
                         newsDetailsClicked = mainViewModel.newsDetailsClicked,
-                        isLoading = mainViewModel.procSubjects,
+                        isLoading = mainViewModel.isProcessingSubject,
                         data = mainViewModel.newsCacheData,
-                        refreshRequired = { mainViewModel.refreshNewsSubjectsFromServer(force = true) },
+                        refreshRequired = { mainViewModel.refreshNewsSubjectsFromServer() },
                     )
                 }
             }

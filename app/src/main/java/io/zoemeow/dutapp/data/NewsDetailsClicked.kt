@@ -2,8 +2,8 @@ package io.zoemeow.dutapp.data
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import io.zoemeow.dutapp.model.NewsGlobalItem
-import io.zoemeow.dutapp.model.NewsSubjectItem
+import io.zoemeow.dutapp.model.news.NewsGlobalItem
+import io.zoemeow.dutapp.model.news.NewsSubjectItem
 
 class NewsDetailsClicked(
     private var showSheetRequested: () -> Unit,

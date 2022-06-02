@@ -1,7 +1,9 @@
 package io.zoemeow.dutapp.model
 
+import io.zoemeow.dutapp.model.account.AutoLoginSettings
+import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
+
 data class AppSettings(
-    var autoLogin: Boolean = false,
-    var username: String? = null,
-    var password: String? = null,
+    var autoLoginSettings: AutoLoginSettings = AutoLoginSettings(),
+    var subjectSchoolYearSettings: SubjectSchoolYearSettings = SubjectSchoolYearSettings(),
 )

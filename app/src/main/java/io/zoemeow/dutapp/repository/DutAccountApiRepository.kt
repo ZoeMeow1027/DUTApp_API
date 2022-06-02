@@ -2,10 +2,10 @@ package io.zoemeow.dutapp.repository
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import io.zoemeow.dutapp.model.AccountInformationMainItem
-import io.zoemeow.dutapp.model.LoginStatus
-import io.zoemeow.dutapp.model.SubjectFeeListItem
-import io.zoemeow.dutapp.model.SubjectScheduleListItem
+import io.zoemeow.dutapp.model.account.AccountInformationMainItem
+import io.zoemeow.dutapp.model.account.LoginStatus
+import io.zoemeow.dutapp.model.subject.SubjectFeeListItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleListItem
 import io.zoemeow.dutapp.network.DutFuncApi
 import javax.inject.Inject
 
