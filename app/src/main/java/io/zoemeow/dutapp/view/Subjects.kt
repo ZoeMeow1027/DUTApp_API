@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
-    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
+    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) {
         if (mainViewModel.procLogin.value)
             AccountPageLoggingIn()
         else SubjectsNotLoggedIn()
@@ -100,7 +100,7 @@ fun SubjectsLoggedIn(cacheData: AccountCacheData, refreshRequest: () -> Unit) {
     val scope = rememberCoroutineScope()
     val swipeRefreshState = rememberSwipeRefreshState(false)
 
-    Column() {
+    Column {
         TabRow(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 5.dp),
             selectedTabIndex = pagerState.currentPage,

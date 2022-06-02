@@ -13,6 +13,20 @@ class NewsCacheFileRepository @Inject constructor(
 ) {
     private var newsCache: NewsCacheItem = NewsCacheItem()
 
+    var newsGlobalUpdateTime: Long
+        get() = newsCache.newsGlobalUpdateTime
+        set(value) {
+            newsCache.newsGlobalUpdateTime = value
+            exportSettings()
+        }
+
+    var newsSubjectUpdateTime: Long
+        get() = newsCache.newsSubjectUpdateTime
+        set(value) {
+            newsCache.newsSubjectUpdateTime = value
+            exportSettings()
+        }
+
     fun setNewsGlobal(newsList: ArrayList<NewsGlobalItem>, append: Boolean = false) {
         if (!append) {
             newsCache.newsGlobalList.clear()

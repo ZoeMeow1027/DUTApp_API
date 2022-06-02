@@ -4,6 +4,8 @@
     package="io.zoemeow.dutapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SET_DEBUG_APP"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".MainApp"
