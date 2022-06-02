@@ -166,7 +166,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
     // Settings View.
     // 0: Settings (and/or not logged in page)
     // 1: Login page
@@ -180,7 +179,7 @@ class MainViewModel @Inject constructor(
     )
 
     // Check if have auto login
-    internal val accLoginStartup = mutableStateOf(false)
+    private val accLoginStartup = mutableStateOf(false)
 
     // Check if login is in progress
     internal val procLogin = mutableStateOf(false)
@@ -341,7 +340,7 @@ class MainViewModel @Inject constructor(
     internal val procAccInfo = mutableStateOf(false)
 
     // Get account information
-    fun getAccountInformation() {
+    private fun getAccountInformation() {
         viewModelScope.launch {
             try {
                 procAccInfo.value = true
@@ -393,11 +392,11 @@ class MainViewModel @Inject constructor(
     }
 
     init {
-        // Load news cache for backup if internet is not available.
-        loadCache()
-
         // Load settings first before continue.
         loadSettings()
+
+        // Load news cache for backup if internet is not available.
+        loadCache()
 
         // Auto refresh news in server at startup.
         refreshNewsGlobalFromServer()
