@@ -1,8 +1,8 @@
 package io.zoemeow.dutapp.repository
 
 import android.util.Log
-import io.zoemeow.dutapp.model.NewsGlobalListItem
-import io.zoemeow.dutapp.model.NewsSubjectListItem
+import io.zoemeow.dutapp.model.news.NewsGlobalListItem
+import io.zoemeow.dutapp.model.news.NewsSubjectListItem
 import io.zoemeow.dutapp.network.DutFuncApi
 import javax.inject.Inject
 

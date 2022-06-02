@@ -4,17 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.material.*
 import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +66,9 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
     mainViewModel.setNewsDetailClicked(NewsDetailsClicked(
         showSheetRequested = {
             scope.launch { sheetState.show() }
@@ -100,13 +109,18 @@ fun MainScreen() {
     ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackBarHostState) },
-//            topBar = {
-//                CenterAlignedTopAppBar(
-//                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
-//                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
-//                )
-//            },
-            bottomBar = { BottomNavigationBar(navController = navController) },
+            topBar = {
+                SmallTopAppBar(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
+                )
+            },
+            bottomBar = {
+                BottomNavigationBar(
+                    navController = navController,
+                    currentRoute = currentRoute
+                )
+            },
             content = { contentPadding ->
                 NavigationHost(
                     navController = navController,
@@ -121,12 +135,13 @@ fun MainScreen() {
 @Composable
 fun NavigationHost(
     navController: NavHostController,
+
     padding: PaddingValues,
     mainViewModel: MainViewModel,
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.Settings.route,
+        startDestination = NavRoutes.News.route,
         modifier = Modifier.padding(padding)
     ) {
         composable(NavRoutes.Home.route) {
@@ -161,11 +176,11 @@ fun NavigationHost(
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    currentRoute: String?
+) {
     NavigationBar {
-        val backStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = backStackEntry?.destination?.route
-
         NavBarItemObject.BarItems.forEach { navItem ->
             NavigationBarItem(
                 selected = currentRoute == navItem.route,

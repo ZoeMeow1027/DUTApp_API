@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.news
 
 data class LinkItem(
     val text: String? = null,

@@ -32,7 +32,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.NewsCacheData
 import io.zoemeow.dutapp.data.NewsDetailsClicked
-import io.zoemeow.dutapp.model.NewsSubjectItem
+import io.zoemeow.dutapp.model.news.NewsSubjectItem
 
 @Composable
 fun NewsSubjectViewHost(
@@ -56,7 +56,7 @@ fun NewsSubjectViewHost(
             refreshRequired()
         }
     ) {
-        if (data.value.NewsSubjectData.value.size == 0) {
+        if (data.value.newsSubjectData.value.size == 0) {
             swipeRefreshState.isRefreshing = isLoading.value
 
             val loadingText = arrayOf(stringResource(id = R.string.text_loading))
@@ -75,7 +75,7 @@ fun NewsSubjectViewHost(
             swipeRefreshState.isRefreshing = false
             NewsSubjectLoadList(
                 newsDetailsClicked = newsDetailsClicked,
-                data.value.NewsSubjectData.value,
+                data.value.newsSubjectData.value,
             )
         }
     }

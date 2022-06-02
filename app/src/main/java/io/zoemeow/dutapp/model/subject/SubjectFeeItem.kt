@@ -1,4 +1,4 @@
-package io.zoemeow.dutapp.model
+package io.zoemeow.dutapp.model.subject
 
 data class SubjectFeeItem(
     val ID: String? = null,

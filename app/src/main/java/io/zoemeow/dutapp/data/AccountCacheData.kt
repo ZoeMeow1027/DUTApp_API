@@ -2,12 +2,14 @@ package io.zoemeow.dutapp.data
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import io.zoemeow.dutapp.model.AccountInformationItem
-import io.zoemeow.dutapp.model.SubjectFeeItem
-import io.zoemeow.dutapp.model.SubjectScheduleItem
+import io.zoemeow.dutapp.model.account.AccountInformationItem
+import io.zoemeow.dutapp.model.subject.SubjectFeeItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 
 class AccountCacheData {
-    private var dataInfo: MutableState<AccountInformationItem> = mutableStateOf(AccountInformationItem())
+    private var dataInfo: MutableState<AccountInformationItem> = mutableStateOf(
+        AccountInformationItem()
+    )
     private var dataSubjectSchedule: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(ArrayList())
     private var dataSubjectFee: MutableState<ArrayList<SubjectFeeItem>> = mutableStateOf(ArrayList())
 

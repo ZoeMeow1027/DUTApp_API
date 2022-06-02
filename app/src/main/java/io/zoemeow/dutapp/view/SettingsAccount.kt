@@ -24,7 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.model.AccountInformationItem
+import io.zoemeow.dutapp.model.account.AccountInformationItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -150,7 +150,7 @@ fun AccountPageLoggingIn() {
 }
 
 @Composable
-fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, logout: () -> Unit, reLogin: () -> Unit) {
+fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean) {
     if (isLoading) AccountPageLoadingYourInfo()
     else {
         Column(

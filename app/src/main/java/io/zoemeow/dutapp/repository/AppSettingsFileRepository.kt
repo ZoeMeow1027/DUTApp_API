@@ -10,23 +10,51 @@ class AppSettingsFileRepository @Inject constructor(private val file: File) {
     private var appSettings: AppSettings = AppSettings()
 
     var username: String?
-        get() = appSettings.username
+        get() = appSettings.autoLoginSettings.username
         set(value) {
-            appSettings.username = value
+            appSettings.autoLoginSettings.username = value
             exportSettings()
         }
 
     var password: String?
-        get() = appSettings.password
+        get() = appSettings.autoLoginSettings.password
         set(value) {
-            appSettings.password = value
+            appSettings.autoLoginSettings.password = value
             exportSettings()
         }
 
     var autoLogin: Boolean
-        get() = appSettings.autoLogin
+        get() = appSettings.autoLoginSettings.autoLogin
         set(value) {
-            appSettings.autoLogin = value
+            appSettings.autoLoginSettings.autoLogin = value
+            exportSettings()
+        }
+
+    var subjectDefault: Boolean
+        get() = appSettings.subjectSchoolYearSettings.subjectDefault
+        set(value) {
+            appSettings.subjectSchoolYearSettings.subjectDefault = value
+            exportSettings()
+        }
+
+    var subjectYear: Int
+        get() = appSettings.subjectSchoolYearSettings.subjectYear
+        set(value) {
+            appSettings.subjectSchoolYearSettings.subjectYear = value
+            exportSettings()
+        }
+
+    var subjectSemester: Int
+        get() = appSettings.subjectSchoolYearSettings.subjectSemester
+        set(value) {
+            appSettings.subjectSchoolYearSettings.subjectSemester = value
+            exportSettings()
+        }
+
+    var subjectInSummer: Boolean
+        get() = appSettings.subjectSchoolYearSettings.subjectInSummer
+        set(value) {
+            appSettings.subjectSchoolYearSettings.subjectInSummer = value
             exportSettings()
         }
 

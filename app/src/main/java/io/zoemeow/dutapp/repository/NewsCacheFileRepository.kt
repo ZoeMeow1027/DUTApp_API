@@ -1,9 +1,9 @@
 package io.zoemeow.dutapp.repository
 
 import com.google.gson.Gson
-import io.zoemeow.dutapp.model.NewsCacheItem
-import io.zoemeow.dutapp.model.NewsGlobalItem
-import io.zoemeow.dutapp.model.NewsSubjectItem
+import io.zoemeow.dutapp.model.cache.NewsCacheItem
+import io.zoemeow.dutapp.model.news.NewsGlobalItem
+import io.zoemeow.dutapp.model.news.NewsSubjectItem
 import java.io.BufferedReader
 import java.io.File
 import javax.inject.Inject
