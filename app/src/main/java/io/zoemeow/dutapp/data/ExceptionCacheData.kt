@@ -1,6 +1,6 @@
 package io.zoemeow.dutapp.data
 
-class ExceptionCacheData() {
+class ExceptionCacheData {
     private var ex: ArrayList<Exception> = ArrayList()
 
     fun addException(ex: Exception) {

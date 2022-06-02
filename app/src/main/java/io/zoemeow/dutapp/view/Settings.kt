@@ -40,7 +40,8 @@ fun Settings(mainViewModel: MainViewModel) {
         3 -> AccountPageInformation(
             accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
             isLoading = mainViewModel.procAccInfo.value,
-            logout = { mainViewModel.logout() }
+            logout = { mainViewModel.logout() },
+            reLogin = { mainViewModel.executeAutoLogin() }
         )
     }
 }
@@ -58,12 +59,12 @@ fun SettingsAccountTag(mainViewModel: MainViewModel) {
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .border(2.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(10.dp))
                 .clickable {
-                    if (mainViewModel.accCacheData.value.sessionID.value.isNotEmpty())
-                        mainViewModel.accountPaneIndex.value = 3
-                    else mainViewModel.accountPaneIndex.value = 1
+                    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline())
+                        mainViewModel.accountPaneIndex.value = 1
+                    else mainViewModel.accountPaneIndex.value = 3
                 }
         ) {
-            if (!mainViewModel.accCacheData.value.sessionID.value.isNotEmpty()) AccountTagNotLoggedIn()
+            if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) AccountTagNotLoggedIn()
             else AccountTagLoggedIn(id = mainViewModel.accCacheData.value.accountInformationData.value.studentId ?: String())
         }
     }
@@ -196,12 +197,12 @@ fun AccountTagLoggedIn(id: String) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = id,
+            text = "ID: $id",
             style = MaterialTheme.typography.headlineSmall
         )
         Spacer(modifier = Modifier.size(5.dp))
         Text(
-            text = "Tap here to view your info or logout your account.",
+            text = "Tap here to view your info/logout/re-login your account.",
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -234,7 +235,7 @@ fun AccountPageLoggingIn() {
 }
 
 @Composable
-fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, logout: () -> Unit) {
+fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, logout: () -> Unit, reLogin: () -> Unit) {
     val openDialog = remember { mutableStateOf(false) }
 
     if (isLoading) AccountPageLoadingYourInfo()
@@ -301,8 +302,14 @@ fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, 
             }
 
             Spacer(modifier = Modifier.size(20.dp))
-            Button(onClick = { openDialog.value = true }) {
-                Text(stringResource(id = R.string.navlogin_loggedin_btnlogout))
+            Row() {
+                Button(onClick = reLogin) {
+                    Text("Re-login")
+                }
+                Spacer(modifier = Modifier.size(5.dp))
+                Button(onClick = { openDialog.value = true }) {
+                    Text(stringResource(id = R.string.navlogin_loggedin_btnlogout))
+                }
             }
         }
     }
@@ -312,7 +319,11 @@ fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean, 
             modifier = Modifier.padding(15.dp),
             onDismissRequest = { openDialog.value = false },
             title = { Text("Logout") },
-            text = { Text(text = "Are you sure you want to logout?") },
+            text = {
+                Text(
+                    text = "Logout will clear subjects cache. You will need to login again to continue receiving subjects.\nAre you sure you want to continue?"
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {

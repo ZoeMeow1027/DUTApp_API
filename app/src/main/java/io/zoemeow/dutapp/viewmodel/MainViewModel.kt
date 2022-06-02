@@ -23,6 +23,7 @@ class MainViewModel @Inject constructor(
     private val dutAccRepo: DutAccountApiRepository,
     private val appSettingsRepo: AppSettingsFileRepository,
     private val newsCacheFileRepo: NewsCacheFileRepository,
+    private val accCacheFileRepo: SubjectCacheFileRepository,
 ) : ViewModel() {
     // Get SnackBar host state from main activity
     private val mainActivitySnackBarHostState: MutableState<SnackbarHostState?> = mutableStateOf(null)
@@ -117,8 +118,8 @@ class MainViewModel @Inject constructor(
 
     // Check if in startup in process subject.
     // Useful for prevent  auto refresh due to switch navigation.
-
     private val procSubjectsInit: MutableState<Boolean> = mutableStateOf(true)
+
     fun refreshNewsSubjectsFromServer(page: Int = 1, force: Boolean = false) {
         viewModelScope.launch {
             try {
@@ -179,9 +180,17 @@ class MainViewModel @Inject constructor(
     )
 
     // Check if have auto login
-    private val accLoginStartup = mutableStateOf(false)
+    internal val accLoginStartup = mutableStateOf(false)
 
+    // Check if login is in progress
     internal val procLogin = mutableStateOf(false)
+
+    internal fun isAvailableOffline(): Boolean {
+        return appSettingsRepo.autoLogin &&
+                accCacheFileRepo.getAccountInformation().studentId != null &&
+                accCacheFileRepo.getSubjectSchedule().size != 0 &&
+                accCacheFileRepo.getSubjectFee().size != 0
+    }
 
     // Log in using your account
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
@@ -233,7 +242,6 @@ class MainViewModel @Inject constructor(
             // and return back to login page
             else if (accLoginStartup.value) {
                 accountPaneIndex.value = 0
-                clearAutoLogin()
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
                 )
@@ -254,6 +262,9 @@ class MainViewModel @Inject constructor(
         appSettingsRepo.autoLogin = false
         appSettingsRepo.username = null
         appSettingsRepo.password = null
+        accCacheFileRepo.deleteAllSubjectSchedule()
+        accCacheFileRepo.deleteAllSubjectFee()
+        accCacheFileRepo.deleteAccountInformation()
     }
 
     fun logout() {
@@ -295,18 +306,27 @@ class MainViewModel @Inject constructor(
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
                     accCacheData.value.sessionID.value, year, semester, inSummer)
-                // Add to cache
+
                 if (dataSubjectScheduleFromInternet.scheduleList != null &&
-                        dataSubjectScheduleFromInternet.scheduleList.size > 0)
+                        dataSubjectScheduleFromInternet.scheduleList.size > 0) {
+                    // Add to cache
                     accCacheData.value.subjectScheduleData.value = dataSubjectScheduleFromInternet.scheduleList
+                    // Write to json
+                    accCacheFileRepo.setSubjectSchedule(dataSubjectScheduleFromInternet.scheduleList)
+                    accCacheFileRepo.subjectScheduleUpdateTime = dataSubjectScheduleFromInternet.date!!
+                }
 
                 // Get subject fee
                 val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
                     accCacheData.value.sessionID.value, year, semester, inSummer)
-                // Add to cache
                 if (dataSubjectFeeFromInternet.feeList != null &&
-                        dataSubjectFeeFromInternet.feeList.size > 0)
+                        dataSubjectFeeFromInternet.feeList.size > 0) {
+                    // Add to cache
                     accCacheData.value.subjectFeeData.value = dataSubjectFeeFromInternet.feeList
+                    // Write to json
+                    accCacheFileRepo.setSubjectFee(dataSubjectFeeFromInternet.feeList)
+                    accCacheFileRepo.subjectFeeUpdateTime = dataSubjectFeeFromInternet.date!!
+                }
             }
             // Any exception will be here!
             catch (ex: Exception) {
@@ -329,9 +349,13 @@ class MainViewModel @Inject constructor(
                 // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
                     accCacheData.value.sessionID.value)
-                // Add to cache
-                if (dataAccInfoFromInternet.accountInfo != null)
+                if (dataAccInfoFromInternet.accountInfo != null) {
+                    // Add to cache
                     accCacheData.value.accountInformationData.value = dataAccInfoFromInternet.accountInfo
+                    // Write to json
+                    accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.accountInfo)
+                    accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
+                }
             }
             // Any exception will be here!
             catch (ex: Exception) {
@@ -347,10 +371,15 @@ class MainViewModel @Inject constructor(
     private fun loadCache() {
         newsCacheData.value.NewsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
         newsCacheData.value.NewsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
+        accCacheData.value.accountInformationData.value = accCacheFileRepo.getAccountInformation()
+        accCacheData.value.subjectScheduleData.value.clear()
+        accCacheData.value.subjectScheduleData.value.addAll(accCacheFileRepo.getSubjectSchedule())
+        accCacheData.value.subjectFeeData.value.clear()
+        accCacheData.value.subjectFeeData.value.addAll(accCacheFileRepo.getSubjectFee())
     }
 
     // Detect auto login (login if user checked auto login check box)
-    private fun executeAutoLogin() {
+    fun executeAutoLogin() {
         if (appSettingsRepo.autoLogin) {
             accLoginStartup.value = true
             if (appSettingsRepo.username != null && appSettingsRepo.password != null)
