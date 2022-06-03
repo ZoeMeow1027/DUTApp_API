@@ -11,7 +11,6 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface DutFuncApi {
-    // https://stackoverflow.com/questions/58298010/how-to-send-parameters-for-get-request-using-retrofit-and-kotlin-coroutines
     @GET("/news?type=global")
     suspend fun getNewsGlobal(
         @Query(value = "page") page: Int = 1

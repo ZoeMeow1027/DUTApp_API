@@ -1,6 +1,7 @@
 package io.zoemeow.dutapp.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -70,16 +71,16 @@ class MainViewModel @Inject constructor(
                 isProcessingGlobal.value = true
                 val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
 
-                if (dataGlobalFromInternet.newsList != null) {
+                if (dataGlobalFromInternet.news_list != null) {
                     newsCacheData.value.newsGlobalData.value.clear()
                     newsCacheFileRepo.deleteAllNewsGlobal()
 
                     val list = ArrayList<NewsGlobalItem>()
-                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.newsList) {
+                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.news_list) {
                         val value = NewsGlobalItem(
                             date = newsItem.date,
                             title = newsItem.title,
-                            contentText = newsItem.contentText,
+                            content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
                         )
@@ -111,17 +112,17 @@ class MainViewModel @Inject constructor(
             try {
                 isProcessingSubject.value = true
                 val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
-                if (dataSubjectsFromInternet.newsList != null) {
+                if (dataSubjectsFromInternet.news_list != null) {
                     newsCacheData.value.newsSubjectData.value.clear()
                     newsCacheFileRepo.deleteAllNewsSubject()
 
                     val list = ArrayList<NewsSubjectItem>()
-                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.newsList) {
+                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.news_list) {
                         list.add(
                             NewsSubjectItem(
                             date = newsItem.date,
                             title = newsItem.title,
-                            contentText = newsItem.contentText,
+                            content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
                         )
@@ -174,10 +175,10 @@ class MainViewModel @Inject constructor(
                 val result = dutAccRepo.dutLogin(user, pass)
 
                 // If login successfully
-                if (result.loggedIn) {
+                if (result.logged_in) {
                     // Save session id to cache
-                    accCacheData.value.sessionID.value = result.sessionId!!
-
+                    accCacheData.value.sessionID.value = result.session_id!!
+                    Log.d("CheckLogin", "Logged in")
                     // Only logged in will can remember login
                     if (rememberLogin) {
                         // Save to app settings
@@ -286,12 +287,12 @@ class MainViewModel @Inject constructor(
                     appSettingsRepo.subjectInSummer
                 )
 
-                if (dataSubjectScheduleFromInternet.scheduleList != null &&
-                        dataSubjectScheduleFromInternet.scheduleList.size > 0) {
+                if (dataSubjectScheduleFromInternet.schedule_list != null &&
+                        dataSubjectScheduleFromInternet.schedule_list.size > 0) {
                     // Add to cache
-                    accCacheData.value.subjectScheduleData.value = dataSubjectScheduleFromInternet.scheduleList
+                    accCacheData.value.subjectScheduleData.value = dataSubjectScheduleFromInternet.schedule_list
                     // Write to json
-                    accCacheFileRepo.setSubjectSchedule(dataSubjectScheduleFromInternet.scheduleList)
+                    accCacheFileRepo.setSubjectSchedule(dataSubjectScheduleFromInternet.schedule_list)
                     accCacheFileRepo.subjectScheduleUpdateTime = dataSubjectScheduleFromInternet.date!!
                 }
 
@@ -302,12 +303,12 @@ class MainViewModel @Inject constructor(
                     appSettingsRepo.subjectSemester,
                     appSettingsRepo.subjectInSummer
                 )
-                if (dataSubjectFeeFromInternet.feeList != null &&
-                        dataSubjectFeeFromInternet.feeList.size > 0) {
+                if (dataSubjectFeeFromInternet.fee_list != null &&
+                        dataSubjectFeeFromInternet.fee_list.size > 0) {
                     // Add to cache
-                    accCacheData.value.subjectFeeData.value = dataSubjectFeeFromInternet.feeList
+                    accCacheData.value.subjectFeeData.value = dataSubjectFeeFromInternet.fee_list
                     // Write to json
-                    accCacheFileRepo.setSubjectFee(dataSubjectFeeFromInternet.feeList)
+                    accCacheFileRepo.setSubjectFee(dataSubjectFeeFromInternet.fee_list)
                     accCacheFileRepo.subjectFeeUpdateTime = dataSubjectFeeFromInternet.date!!
                 }
             }
@@ -331,11 +332,11 @@ class MainViewModel @Inject constructor(
                 // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
                     accCacheData.value.sessionID.value)
-                if (dataAccInfoFromInternet.accountInfo != null) {
+                if (dataAccInfoFromInternet.account_info != null) {
                     // Add to cache
-                    accCacheData.value.accountInformationData.value = dataAccInfoFromInternet.accountInfo
+                    accCacheData.value.accountInformationData.value = dataAccInfoFromInternet.account_info
                     // Write to json
-                    accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.accountInfo)
+                    accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.account_info)
                     accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
                 }
             }

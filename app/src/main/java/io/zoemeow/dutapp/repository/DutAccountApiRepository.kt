@@ -14,7 +14,7 @@ class DutAccountApiRepository @Inject constructor(private val api: DutFuncApi) {
 
     // Login/Logout
     suspend fun dutLogin(user: String, pass: String): LoginStatus {
-        var result = LoginStatus(loggedIn = false)
+        var result = LoginStatus(logged_in = false)
 
         try {
             result = api.dutLogin(user, pass)
@@ -26,7 +26,7 @@ class DutAccountApiRepository @Inject constructor(private val api: DutFuncApi) {
     }
 
     suspend fun dutLogout(sid: String): LoginStatus {
-        var result = LoginStatus(loggedIn = false)
+        var result = LoginStatus(logged_in = false)
 
         try {
             result = api.dutLogout(sid)

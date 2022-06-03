@@ -66,9 +66,6 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-
     mainViewModel.setNewsDetailClicked(NewsDetailsClicked(
         showSheetRequested = {
             scope.launch { sheetState.show() }
@@ -109,18 +106,13 @@ fun MainScreen() {
     ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackBarHostState) },
-            topBar = {
-                SmallTopAppBar(
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
-                )
-            },
-            bottomBar = {
-                BottomNavigationBar(
-                    navController = navController,
-                    currentRoute = currentRoute
-                )
-            },
+//            topBar = {
+//                SmallTopAppBar(
+//                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
+//                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
+//                )
+//            },
+            bottomBar = { BottomNavigationBar(navController = navController) },
             content = { contentPadding ->
                 NavigationHost(
                     navController = navController,
@@ -135,7 +127,6 @@ fun MainScreen() {
 @Composable
 fun NavigationHost(
     navController: NavHostController,
-
     padding: PaddingValues,
     mainViewModel: MainViewModel,
 ) {
@@ -166,6 +157,7 @@ fun NavigationHost(
             BackHandler(
                 enabled = (mainViewModel.accountPaneIndex.value != 0),
                 onBack = {
+                    // If in page logging, prevent back
                     if (mainViewModel.accountPaneIndex.value != 2)
                         mainViewModel.accountPaneIndex.value = 0
                 }
@@ -176,18 +168,16 @@ fun NavigationHost(
 }
 
 @Composable
-fun BottomNavigationBar(
-    navController: NavHostController,
-    currentRoute: String?
-) {
+fun BottomNavigationBar(navController: NavHostController) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
     NavigationBar {
         NavBarItemObject.BarItems.forEach { navItem ->
             NavigationBarItem(
                 selected = currentRoute == navItem.route,
                 onClick = {
-                    navController.navigate(
-                        navItem.route
-                    ) {
+                    navController.navigate(navItem.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }

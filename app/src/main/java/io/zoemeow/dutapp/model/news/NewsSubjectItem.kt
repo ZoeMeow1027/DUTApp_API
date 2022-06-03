@@ -11,9 +11,6 @@ data class NewsSubjectItem(
 
     var date: Long? = null,
     var title: String? = null,
-
-    @SerializedName("contenttext")
-    var contentText: String? = null,
-
+    var content: String? = null,
     var links: ArrayList<LinkItem>? = null,
 )
