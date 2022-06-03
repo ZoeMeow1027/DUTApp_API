@@ -8,11 +8,9 @@ import kotlin.collections.ArrayList
 data class NewsGlobalItem(
     @Expose
     var id: String = UUID.randomUUID().toString(),
+	
     var date: Long? = null,
     var title: String? = null,
-
-    @SerializedName("contenttext")
-    var contentText: String? = null,
-
+    var content: String? = null,
     var links: ArrayList<LinkItem>? = null,
 )

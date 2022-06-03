@@ -1,11 +1,11 @@
 package io.zoemeow.dutapp.model.subject
 
 data class SubjectFeeItem(
-    val ID: String? = null,
-    val Name: String? = null,
-    val Credit: Int = 0,
-    val IsHighQuality: Boolean = false,
-    val Price: Int = 0,
-    val Debt: Boolean = false,
-    val IsReStudy: Boolean = false,
+    val id: String? = null,
+    val name: String? = null,
+    val credit: Int = 0,
+    val is_high_quality: Boolean = false,
+    val price: Int = 0,
+    val debt: Boolean = false,
+    val is_restudy: Boolean = false,
 )

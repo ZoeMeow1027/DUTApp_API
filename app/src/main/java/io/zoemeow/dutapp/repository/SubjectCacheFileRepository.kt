@@ -51,7 +51,7 @@ class SubjectCacheFileRepository @Inject constructor(
     }
 
     fun getSubjectSchedule(id: String): SubjectScheduleItem? {
-        return accountCache.subjectScheduleData.firstOrNull { it.ID == id }
+        return accountCache.subjectScheduleData.firstOrNull { it.id == id }
     }
 
     fun deleteSubjectSchedule(item: SubjectScheduleItem) {
@@ -80,7 +80,7 @@ class SubjectCacheFileRepository @Inject constructor(
     }
 
     fun getSubjectFee(id: String): SubjectFeeItem? {
-        return accountCache.subjectFeeData.firstOrNull { it.ID == id }
+        return accountCache.subjectFeeData.firstOrNull { it.id == id }
     }
 
     fun deleteSubjectFee(item: SubjectFeeItem) {

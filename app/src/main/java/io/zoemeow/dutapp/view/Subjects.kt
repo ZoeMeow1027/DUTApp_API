@@ -178,13 +178,11 @@ fun SubjectStudyItem(item: SubjectScheduleItem) {
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(top = 10.dp, bottom = 10.dp),
     ) {
-        Text("${item.ID}")
-        Text("${item.Name}")
-        Text("${item.ScheduleStudy}")
-        Text("${item.Weeks}")
-        if (item.DateExam != null)
+        Text("${item.id}")
+        Text("${item.name}")
+        if (item.schedule_exam != null)
             Text(getDateString(
-                item.DateExam,
+                item.schedule_exam.date,
                 stringResource(id = R.string.navsubject_subject_datetimeformat),
                 "GMT+7")
             )
@@ -202,12 +200,12 @@ fun SubjectsFeeItem(item: SubjectFeeItem) {
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(top = 10.dp, bottom = 10.dp),
     ) {
-        Text("${item.ID}")
-        Text("${item.Name}")
-        Text("${item.Credit}")
-        Text("${item.IsHighQuality}")
-        Text("${item.Price}")
-        Text("${item.Debt}")
-        Text("${item.IsReStudy}")
+        Text("${item.id}")
+        Text("${item.name}")
+        Text("${item.credit}")
+        Text("${item.is_high_quality}")
+        Text("${item.price}")
+        Text("${item.debt}")
+        Text("${item.is_restudy}")
     }
 }
