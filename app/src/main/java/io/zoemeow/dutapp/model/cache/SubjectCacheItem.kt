@@ -10,5 +10,7 @@ data class SubjectCacheItem(
     var subjectScheduleUpdateTime: Long = 0,
     var subjectScheduleData: ArrayList<SubjectScheduleItem> = ArrayList(),
     var subjectFeeUpdateTime: Long = 0,
-    var subjectFeeData: ArrayList<SubjectFeeItem> = ArrayList()
+    var subjectFeeData: ArrayList<SubjectFeeItem> = ArrayList(),
+    var subjectCreditTotal: Int = 0,
+    var subjectMoneyTotal: Long = 0,
 )

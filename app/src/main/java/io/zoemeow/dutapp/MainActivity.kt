@@ -4,23 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,8 +28,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.pager.ExperimentalPagerApi
 import dagger.hilt.android.AndroidEntryPoint
-import io.zoemeow.dutapp.data.NewsDetailsClicked
+import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.navbar.NavBarItemObject
 import io.zoemeow.dutapp.navbar.NavRoutes
 import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
@@ -57,7 +56,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalComposeUiApi::class, ExperimentalPagerApi::class
+)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -66,7 +67,7 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    mainViewModel.setNewsDetailClicked(NewsDetailsClicked(
+    mainViewModel.setNewsDetailClicked(NewsDetailsClickedData(
         showSheetRequested = {
             scope.launch { sheetState.show() }
         },
@@ -84,7 +85,7 @@ fun MainScreen() {
         snapshotFlow { sheetState.currentValue }
             .collect {
                 if (it == ModalBottomSheetValue.Hidden)
-                    mainViewModel.newsDetailsClicked.value?.clearViewDetails()
+                    mainViewModel.newsDetailsClickedData.value?.clearViewDetails()
             }
     }
 
@@ -93,12 +94,14 @@ fun MainScreen() {
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetBackgroundColor = MaterialTheme.colorScheme.onSecondary,
         sheetContent = {
-            when(mainViewModel.newsDetailsClicked.value!!.newsType.value) {
+            when(mainViewModel.newsDetailsClickedData.value!!.newsType.value) {
                 0 -> NewsGlobalDetails(
-                    newsGlobalItem = mainViewModel.newsDetailsClicked.value!!.newsGlobal.value
+                    newsGlobalItem = mainViewModel.newsDetailsClickedData.value!!.newsGlobal.value,
+                    linkClicked = { mainViewModel.openLinkInBrowser(it) }
                 )
                 1 -> NewsSubjectDetails(
-                    newsSubjectItem = mainViewModel.newsDetailsClicked.value!!.newsSubject.value
+                    newsSubjectItem = mainViewModel.newsDetailsClickedData.value!!.newsSubject.value,
+                    linkClicked = { mainViewModel.openLinkInBrowser(it) }
                 )
                 -1 -> Box { Text("") }
             }
@@ -106,12 +109,6 @@ fun MainScreen() {
     ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackBarHostState) },
-//            topBar = {
-//                SmallTopAppBar(
-//                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
-//                    title = { Text(text = stringResource(id = R.string.topbar_name)) }
-//                )
-//            },
             bottomBar = { BottomNavigationBar(navController = navController) },
             content = { contentPadding ->
                 NavigationHost(
@@ -124,6 +121,9 @@ fun MainScreen() {
     }
 }
 
+@ExperimentalComposeUiApi
+@ExperimentalPagerApi
+@ExperimentalMaterial3Api
 @Composable
 fun NavigationHost(
     navController: NavHostController,
@@ -136,14 +136,16 @@ fun NavigationHost(
         modifier = Modifier.padding(padding)
     ) {
         composable(NavRoutes.Home.route) {
-            Home()
+            Home(
+                mainViewModel = mainViewModel
+            )
         }
 
         composable(NavRoutes.News.route) {
             // If sheet still display, hide them, else will return to main screen.
             BackHandler(
-                enabled = (mainViewModel.newsDetailsClicked.value!!.newsType.value != -1),
-                onBack = { mainViewModel.newsDetailsClicked.value!!.hideViewDetails() },
+                enabled = (mainViewModel.newsDetailsClickedData.value!!.newsType.value != -1),
+                onBack = { mainViewModel.newsDetailsClickedData.value!!.hideViewDetails() },
             )
             News(mainViewModel = mainViewModel)
         }

@@ -1,6 +1,8 @@
 package io.zoemeow.dutapp.viewmodel
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
@@ -9,18 +11,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.data.*
-import io.zoemeow.dutapp.model.account.AutoLoginSettings
+import io.zoemeow.dutapp.data.AccountCacheData
+import io.zoemeow.dutapp.data.ExceptionCacheData
+import io.zoemeow.dutapp.data.NewsCacheData
+import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.model.news.NewsGlobalItem
 import io.zoemeow.dutapp.model.news.NewsGlobalListItem
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
 import io.zoemeow.dutapp.model.news.NewsSubjectListItem
+import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import io.zoemeow.dutapp.repository.*
+import io.zoemeow.dutapp.utils.getCurrentLesson
+import io.zoemeow.dutapp.utils.getDayOfWeek
 import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.*
 import javax.inject.Inject
+import kotlin.collections.ArrayList
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -46,9 +55,9 @@ class MainViewModel @Inject constructor(
     }
 
     // News Details View when clicked a news.
-    internal val newsDetailsClicked: MutableState<NewsDetailsClicked?> = mutableStateOf(null)
-    fun setNewsDetailClicked(item: NewsDetailsClicked) {
-        newsDetailsClicked.value = item
+    internal val newsDetailsClickedData: MutableState<NewsDetailsClickedData?> = mutableStateOf(null)
+    fun setNewsDetailClicked(item: NewsDetailsClickedData) {
+        newsDetailsClickedData.value = item
     }
 
     // News data with cache (for easier manage).
@@ -63,86 +72,137 @@ class MainViewModel @Inject constructor(
     // Get news global.
     // Check if is getting news global
     internal val isProcessingGlobal: MutableState<Boolean> = mutableStateOf(false)
+    private val pageNewsGlobalCurrent = mutableStateOf(1)
+    private val pageNewsGlobalPreviousResult = mutableStateOf(false)
+
+    // Get news global from server
+    fun getNewsGlobal(force: Boolean) {
+        viewModelScope.launch {
+            if (force) {
+                pageNewsGlobalCurrent.value = 1
+                pageNewsGlobalPreviousResult.value = false
+                newsCacheFileRepo.deleteAllNewsGlobal()
+            }
+
+            if (pageNewsGlobalPreviousResult.value)
+                pageNewsGlobalCurrent.value += 1
+
+            pageNewsGlobalPreviousResult.value = refreshNewsGlobalFromServer(
+                pageNewsGlobalCurrent.value,
+                !force
+            )
+        }
+    }
 
     // Refresh news global
-    fun refreshNewsGlobalFromServer(page: Int = 1) {
-        viewModelScope.launch {
-            try {
-                isProcessingGlobal.value = true
-                val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
+    private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false): Boolean {
+        var result = false
+        isProcessingGlobal.value = true
 
-                if (dataGlobalFromInternet.news_list != null) {
-                    newsCacheData.value.newsGlobalData.value.clear()
-                    newsCacheFileRepo.deleteAllNewsGlobal()
+        try {
+            val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
 
-                    val list = ArrayList<NewsGlobalItem>()
-                    for (newsItem: NewsGlobalItem in dataGlobalFromInternet.news_list) {
-                        val value = NewsGlobalItem(
+            if (dataGlobalFromInternet.news_list != null) {
+                val list = ArrayList<NewsGlobalItem>()
+                for (newsItem: NewsGlobalItem in dataGlobalFromInternet.news_list) {
+                    list.add(
+                        NewsGlobalItem(
                             date = newsItem.date,
                             title = newsItem.title,
                             content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
                         )
-                        list.add(value)
-                    }
+                    )
+                }
 
-                    newsCacheFileRepo.setNewsGlobal(list)
-                    newsCacheData.value.newsGlobalData.value.addAll(list)
-                } else throw Exception("News list empty.")
-            }
-            catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
+                newsCacheFileRepo.setNewsGlobal(list, append = append)
+                if (!append)
+                    newsCacheData.value.newsGlobalData.value.clear()
+                newsCacheData.value.newsGlobalData.value.addAll(list)
+            } else throw Exception("News list empty.")
 
-                // Notify that can't load news here.
-                mainActivitySnackBarHostState.value?.showSnackbar(
-                    mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
-                )
-            }
-            isProcessingGlobal.value = false
+            // Return true
+            result = true
         }
+        catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
+
+            // Notify that can't load news here.
+            mainActivitySnackBarHostState.value?.showSnackbar(
+                mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
+            )
+        }
+        isProcessingGlobal.value = false
+        return result
     }
 
     // Get news subjects
     // Check if is getting news subject
     internal val isProcessingSubject: MutableState<Boolean> = mutableStateOf(false)
+    private val pageNewSubjectCurrent = mutableStateOf(1)
+    private val pageNewsSubjectPreviousResult = mutableStateOf(false)
 
-    fun refreshNewsSubjectsFromServer(page: Int = 1) {
+    fun getNewsSubject(force: Boolean) {
         viewModelScope.launch {
-            try {
-                isProcessingSubject.value = true
-                val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
-                if (dataSubjectsFromInternet.news_list != null) {
-                    newsCacheData.value.newsSubjectData.value.clear()
-                    newsCacheFileRepo.deleteAllNewsSubject()
+            if (force) {
+                pageNewSubjectCurrent.value = 1
+                pageNewsSubjectPreviousResult.value = false
+                newsCacheFileRepo.deleteAllNewsSubject()
+            }
 
-                    val list = ArrayList<NewsSubjectItem>()
-                    for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.news_list) {
-                        list.add(
-                            NewsSubjectItem(
+            if (pageNewsSubjectPreviousResult.value)
+                pageNewSubjectCurrent.value += 1
+
+            pageNewsSubjectPreviousResult.value = refreshNewsSubjectsFromServer(
+                pageNewSubjectCurrent.value,
+                !force
+            )
+        }
+    }
+
+    // Refresh news subject
+    private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false): Boolean {
+        var result = false
+        isProcessingSubject.value = true
+
+        try {
+            val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
+
+            if (dataSubjectsFromInternet.news_list != null) {
+                val list = ArrayList<NewsSubjectItem>()
+                for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.news_list) {
+                    list.add(
+                        NewsSubjectItem(
                             date = newsItem.date,
                             title = newsItem.title,
                             content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
                             id = md5("${newsItem.date}-${newsItem.title}")
                         )
-                        )
-                    }
+                    )
+                }
 
-                    newsCacheFileRepo.setNewsSubject(list)
-                    newsCacheData.value.newsSubjectData.value.addAll(list)
-                } else throw Exception("News list empty.")
-            }
-            catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
+                newsCacheFileRepo.setNewsSubject(list, append = append)
+                if (!append)
+                    newsCacheData.value.newsSubjectData.value.clear()
+                newsCacheData.value.newsSubjectData.value.addAll(list)
+            } else throw Exception("News list empty.")
 
-                // Notify that can't load news here.
-                mainActivitySnackBarHostState.value?.showSnackbar(
-                    mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
-                )
-            }
-            isProcessingSubject.value = false
+            // Return true
+            result = true
         }
+        catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
+
+            // Notify that can't load news here.
+            mainActivitySnackBarHostState.value?.showSnackbar(
+                mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
+            )
+        }
+
+        isProcessingSubject.value = false
+        return result
     }
 
     // Settings View.
@@ -189,7 +249,7 @@ class MainViewModel @Inject constructor(
 
                     // Pre-load subject schedule, fee and account information
                     refreshSubjectScheduleAndFee()
-                    refreshAccountInformation()
+                    refreshAccountInfo()
                 }
             }
             // Any exception will be here!
@@ -290,10 +350,13 @@ class MainViewModel @Inject constructor(
                 if (dataSubjectScheduleFromInternet.schedule_list != null &&
                         dataSubjectScheduleFromInternet.schedule_list.size > 0) {
                     // Add to cache
-                    accCacheData.value.subjectScheduleData.value = dataSubjectScheduleFromInternet.schedule_list
+                    accCacheData.value.subjectScheduleData = dataSubjectScheduleFromInternet.schedule_list
+                    accCacheData.value.subjectCredit = dataSubjectScheduleFromInternet.total_credit!!
+
                     // Write to json
                     accCacheFileRepo.setSubjectSchedule(dataSubjectScheduleFromInternet.schedule_list)
                     accCacheFileRepo.subjectScheduleUpdateTime = dataSubjectScheduleFromInternet.date!!
+                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit)
                 }
 
                 // Get subject fee
@@ -306,10 +369,15 @@ class MainViewModel @Inject constructor(
                 if (dataSubjectFeeFromInternet.fee_list != null &&
                         dataSubjectFeeFromInternet.fee_list.size > 0) {
                     // Add to cache
-                    accCacheData.value.subjectFeeData.value = dataSubjectFeeFromInternet.fee_list
+                    accCacheData.value.subjectFeeData = dataSubjectFeeFromInternet.fee_list
+                    accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit!!
+                    accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money!!
+
                     // Write to json
                     accCacheFileRepo.setSubjectFee(dataSubjectFeeFromInternet.fee_list)
                     accCacheFileRepo.subjectFeeUpdateTime = dataSubjectFeeFromInternet.date!!
+                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectFeeFromInternet.total_credit)
+                    accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money)
                 }
             }
             // Any exception will be here!
@@ -317,14 +385,44 @@ class MainViewModel @Inject constructor(
                 exceptionCacheData.value.addException(ex)
             }
 
+            // TODO: Development for current day subjects here!
+            getCurrentSubjectScheduleOnDay()
+
             isProcessingSubjectScheduleFee.value = false
+        }
+    }
+
+    internal val subjectScheduleDayOfWeek: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
+        ArrayList()
+    )
+
+    fun getCurrentSubjectScheduleOnDay() {
+        // val day = getDayOfWeek()
+        val day = getDayOfWeek()
+        val lesson = getCurrentLesson()
+        Log.d("io.zoemeow.dutapp", "DayOfWeek: $day")
+
+        try {
+            subjectScheduleDayOfWeek.value.clear()
+            subjectScheduleDayOfWeek.value.addAll(
+                accCacheData.value.subjectScheduleData
+                    .filter {
+                        it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == day }
+                    }
+                    .filter {
+                        it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson }
+                    }
+            )
+        }
+        catch (ex: Exception) {
+            ex.printStackTrace()
         }
     }
 
     internal val isProcessingAccountInfo = mutableStateOf(false)
 
     // Get account information
-    private fun refreshAccountInformation() {
+    private fun refreshAccountInfo() {
         viewModelScope.launch {
             try {
                 isProcessingAccountInfo.value = true
@@ -349,6 +447,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun openLinkInBrowser(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        mainActivityContext.value?.startActivity(intent)
+    }
+
     fun getSubjectSchoolYearSettings(): SubjectSchoolYearSettings {
         return SubjectSchoolYearSettings(
             appSettingsRepo.subjectDefault,
@@ -370,10 +473,10 @@ class MainViewModel @Inject constructor(
         newsCacheData.value.newsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
         newsCacheData.value.newsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
         accCacheData.value.accountInformationData.value = accCacheFileRepo.getAccountInformation()
-        accCacheData.value.subjectScheduleData.value.clear()
-        accCacheData.value.subjectScheduleData.value.addAll(accCacheFileRepo.getSubjectSchedule())
-        accCacheData.value.subjectFeeData.value.clear()
-        accCacheData.value.subjectFeeData.value.addAll(accCacheFileRepo.getSubjectFee())
+        accCacheData.value.subjectScheduleData.clear()
+        accCacheData.value.subjectScheduleData.addAll(accCacheFileRepo.getSubjectSchedule())
+        accCacheData.value.subjectFeeData.clear()
+        accCacheData.value.subjectFeeData.addAll(accCacheFileRepo.getSubjectFee())
     }
 
     // Detect auto login (login if user checked auto login check box)
@@ -396,10 +499,13 @@ class MainViewModel @Inject constructor(
 
         // Load news cache for backup if internet is not available.
         loadCache()
+        getCurrentSubjectScheduleOnDay()
 
         // Auto refresh news in server at startup.
-        refreshNewsGlobalFromServer()
-        refreshNewsSubjectsFromServer()
+        // refreshNewsGlobalFromServer()
+        getNewsGlobal(true)
+        // refreshNewsSubjectsFromServer()
+        getNewsSubject(true)
 
         // Detect auto login (login if user checked auto login check box)
         executeAutoLogin()

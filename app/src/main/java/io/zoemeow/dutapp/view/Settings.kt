@@ -12,6 +12,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import io.zoemeow.dutapp.BuildConfig
 import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
@@ -31,6 +32,7 @@ fun Settings(mainViewModel: MainViewModel) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SettingsMain(mainViewModel: MainViewModel) {
     val dialogLogoutEnabled = remember { mutableStateOf(false) }
@@ -45,14 +47,19 @@ fun SettingsMain(mainViewModel: MainViewModel) {
             toggleLogout = { dialogLogoutEnabled.value = true }
         )
         Divider(thickness = 0.5.dp)
-        SettingsOpenSchoolYear(
-            mainViewModel.getSubjectSchoolYearSettings(),
-            toggleSchoolYear = { }
+        SettingsOptionSubject(
+            mainViewModel.getSubjectSchoolYearSettings()
+        )
+        Divider(thickness = 0.5.dp)
+        SettingsOptionAppSettings()
+        Divider(thickness = 0.5.dp)
+        SettingsOptionAppInfo(
+            linkClicked = { mainViewModel.openLinkInBrowser(it) }
         )
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalComposeUiApi
 @Composable
 fun DialogLogout(
     enabled: MutableState<Boolean>,
@@ -103,150 +110,142 @@ fun SettingsOptionAccount(
     mainViewModel: MainViewModel,
     toggleLogout: () -> Unit
 ) {
-    Box {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                Text(
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp),
-                    text = "Account",
-                    style = MaterialTheme.typography.labelLarge
+    Column {
+        SettingsOptionTitle(text = "Account")
+        // If not logged in
+        if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() &&
+            !mainViewModel.isAvailableOffline()) {
+            // Login
+            SettingsOptionLayout(
+                textAbove = "Login",
+                textBelow = "To use more app features, you need to sign in.",
+                clickable = { mainViewModel.accountPaneIndex.value = 1 }
+            )
+        }
+        // If logged in/offline mode and logged in previously.
+        else {
+            Column {
+                // Account Information
+                SettingsOptionLayout(
+                    textAbove = "View Account Information",
+                    clickable = { mainViewModel.accountPaneIndex.value = 3 }
                 )
-            }
-            // If not logged in
-            if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() &&
-                !mainViewModel.isAvailableOffline()) {
-                // Login
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(70.dp)
-                        .clickable { mainViewModel.accountPaneIndex.value = 1 },
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Column(
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            text = "Login",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        Text(
-                            text = "To use more app features, you need to sign in.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
+                // Re-login
+                if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
+                    SettingsOptionLayout(
+                        textAbove = "Re-login",
+                        textBelow = "You have saved your login, but you haven't been logged in to system. Click here to re-login.",
+                        clickable = { mainViewModel.executeAutoLogin() }
+                    )
                 }
-            }
-            // If logged in/offline mode and logged in previously.
-            else {
-                Column {
-                    // Account Information
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(70.dp)
-                            .clickable { mainViewModel.accountPaneIndex.value = 3 },
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(start = 20.dp, end = 20.dp),
-                            text = "View Account Information",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                    // Re-login
-                    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(70.dp)
-                                .clickable { mainViewModel.executeAutoLogin() },
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(start = 20.dp, end = 20.dp)
-                            ) {
-                                Text(
-                                    text = "Re-login",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                                Text(
-                                    text = "You have saved your login, but you haven't been logged in to system. Click here to re-login.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                            }
-                        }
-                    }
-                    // Logout
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(70.dp)
-                            .clickable { toggleLogout() },
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp)) {
-                            Text(
-                                text = "Logout",
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                            Text(
-                                text = "Logged in as ${mainViewModel.accCacheData.value.accountInformationData.value.studentId}",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
+                // Logout
+                SettingsOptionLayout(
+                    textAbove = "Logout",
+                    textBelow = "Logged in as ${mainViewModel.accCacheData.value.accountInformationData.value.studentId}",
+                    clickable = { toggleLogout() }
+                )
             }
         }
     }
 }
 
 @Composable
-fun SettingsOpenSchoolYear(
+fun SettingsOptionSubject(
     schoolYearSettings: SubjectSchoolYearSettings,
-    toggleSchoolYear: () -> Unit
 ) {
-    Box {
+    Column {
+        SettingsOptionTitle(text = "Subject")
+        // Setting for School year.
+        SettingsOptionLayout(
+            textAbove = "Set school year (Currently disabled)",
+            textBelow = "Currently: School Year ${schoolYearSettings.subjectYear}, Semester ${schoolYearSettings.subjectSemester}${if (schoolYearSettings.subjectInSummer) " (in summer)" else ""}",
+            clickable = { }
+        )
+    }
+}
+
+@Composable
+fun SettingsOptionAppSettings() {
+    Column {
+        SettingsOptionTitle(text = "Settings")
+        SettingsOptionLayout(
+            textAbove = "App theme",
+            textBelow = "Following system theme (This feature are under development. Stay tuned!)",
+            clickable = {  }
+        )
+        SettingsOptionLayout(
+            textAbove = "Black backgrounds in dark theme (for AMOLED)",
+            textBelow = "No (This feature are under development. Stay tuned!)",
+            clickable = {  }
+        )
+    }
+}
+
+@Composable
+fun SettingsOptionAppInfo(
+    linkClicked: (String) -> Unit
+) {
+    Column {
+        SettingsOptionTitle(text = "App information")
+        SettingsOptionLayout(
+            textAbove = "Version",
+            textBelow = BuildConfig.VERSION_NAME,
+            clickable = { }
+        )
+        SettingsOptionLayout(
+            textAbove = "Changelog",
+            textBelow = "(This feature are under development. Stay tuned!)",
+            clickable = { }
+        )
+        SettingsOptionLayout(
+            textAbove = "GitHub (click to open in browser)",
+            textBelow = "https://github.com/ZoeMeow5466/DUTApp_API",
+            clickable = { linkClicked("https://github.com/ZoeMeow5466/DUTApp_API") }
+        )
+    }
+}
+
+@Composable
+fun SettingsOptionTitle(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp),
+        contentAlignment = Alignment.BottomStart,
+    ) {
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                contentAlignment = Alignment.BottomStart,
-            ) {
-                Column {
-                    Text(
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp),
-                        text = "Subject",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
-            // Setting for School year.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp)
-                    .clickable { toggleSchoolYear() },
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp)) {
-                    Text(
-                        text = "Set school year (Currently disabled)",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        text = "Currently: School Year ${schoolYearSettings.subjectYear}, Semester ${schoolYearSettings.subjectSemester}${if (schoolYearSettings.subjectInSummer) " (in summer)" else ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+            Text(
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp),
+                text = text,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsOptionLayout(
+    textAbove: String,
+    textBelow: String? = null,
+    clickable: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(75.dp)
+            .clickable { clickable() },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp)) {
+            Text(
+                text = textAbove,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            if (textBelow != null) {
+                Text(
+                    text = textBelow,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }

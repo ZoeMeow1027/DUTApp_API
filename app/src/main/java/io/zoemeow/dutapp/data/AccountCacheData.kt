@@ -10,8 +10,10 @@ class AccountCacheData {
     private var dataInfo: MutableState<AccountInformationItem> = mutableStateOf(
         AccountInformationItem()
     )
-    private var dataSubjectSchedule: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(ArrayList())
-    private var dataSubjectFee: MutableState<ArrayList<SubjectFeeItem>> = mutableStateOf(ArrayList())
+    private var dataSubjectSchedule: ArrayList<SubjectScheduleItem> = ArrayList()
+    private var dataSubjectFee: ArrayList<SubjectFeeItem> = ArrayList()
+    private var subjectCreditTotal: Int = 0
+    private var subjectMoneyTotal: Long = 0
 
     @Transient
     private var sessionIDPri: MutableState<String> = mutableStateOf(String())
@@ -22,18 +24,26 @@ class AccountCacheData {
             sessionIDPri.value = value.value
         }
 
-    var subjectScheduleData: MutableState<ArrayList<SubjectScheduleItem>>
+    var subjectCredit: Int
+        get() = subjectCreditTotal
+        set(value) { subjectCreditTotal = value }
+
+    var subjectMoney: Long
+        get() = subjectMoneyTotal
+        set(value) { subjectMoneyTotal = value }
+
+    var subjectScheduleData: ArrayList<SubjectScheduleItem>
         get() = dataSubjectSchedule
         set(value) {
-            dataSubjectSchedule.value.clear()
-            dataSubjectSchedule.value.addAll(value.value)
+            dataSubjectSchedule.clear()
+            dataSubjectSchedule.addAll(value)
         }
 
-    var subjectFeeData: MutableState<ArrayList<SubjectFeeItem>>
+    var subjectFeeData: ArrayList<SubjectFeeItem>
         get() = dataSubjectFee
         set(value) {
-            dataSubjectFee.value.clear()
-            dataSubjectFee.value.addAll(value.value)
+            dataSubjectFee.clear()
+            dataSubjectFee.addAll(value)
         }
 
     var accountInformationData: MutableState<AccountInformationItem>
@@ -42,8 +52,10 @@ class AccountCacheData {
 
     fun clearAllData() {
         dataInfo.value = AccountInformationItem()
-        dataSubjectSchedule.value.clear()
-        dataSubjectFee.value.clear()
+        dataSubjectSchedule.clear()
+        dataSubjectFee.clear()
+        subjectCredit = 0
+        subjectMoney = 0
         sessionIDPri.value = String()
     }
 

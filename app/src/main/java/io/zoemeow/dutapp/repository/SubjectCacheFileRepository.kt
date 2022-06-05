@@ -107,6 +107,24 @@ class SubjectCacheFileRepository @Inject constructor(
         exportSettings()
     }
 
+    fun getSubjectCreditTotal(): Int {
+        return accountCache.subjectCreditTotal
+    }
+
+    fun setSubjectCreditTotal(value: Int) {
+        accountCache.subjectCreditTotal = value
+        exportSettings()
+    }
+
+    fun getSubjectMoneyTotal(): Long {
+        return accountCache.subjectMoneyTotal
+    }
+
+    fun setSubjectMoneyTotal(value: Long) {
+        accountCache.subjectMoneyTotal = value
+        exportSettings()
+    }
+
     private fun importSettings() {
         try {
             val buffer: BufferedReader = file.bufferedReader()
