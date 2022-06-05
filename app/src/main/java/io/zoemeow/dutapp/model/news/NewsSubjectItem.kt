@@ -1,9 +1,7 @@
 package io.zoemeow.dutapp.model.news
 
 import com.google.gson.annotations.Expose
-import com.google.gson.annotations.SerializedName
 import java.util.*
-import kotlin.collections.ArrayList
 
 data class NewsSubjectItem(
     @Expose

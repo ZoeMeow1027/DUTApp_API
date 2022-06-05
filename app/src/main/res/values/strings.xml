@@ -9,7 +9,7 @@
     <string name="navnaws_notify_loadnewsfailed">We couldn\'t load news for you! Check your connection and try again.</string>
 
     <!-- News details page -->
-    <string name="newsdetails_swipeorclickabovetoexit">(Swipe bottom or click empty space above this to exit)</string>
+    <string name="newsdetails_swipeorclickabovetoexit">(Click blue text to open links, swipe bottom or click empty space above this to exit)</string>
 
     <!-- News subject page -->
     <string name="navsubject_notloggedin_text1">You are not logged in</string>

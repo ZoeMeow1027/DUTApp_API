@@ -1,26 +1,21 @@
 package io.zoemeow.dutapp.view
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,106 +26,97 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.NewsCacheData
-import io.zoemeow.dutapp.data.NewsDetailsClicked
+import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
 
 @Composable
 fun NewsSubjectViewHost(
-    newsDetailsClicked: MutableState<NewsDetailsClicked?>,
-    isLoading: MutableState<Boolean>,
+    newsDetailsClickedData: MutableState<NewsDetailsClickedData?>,
+    isLoading: Boolean,
     data: MutableState<NewsCacheData>,
-    refreshRequired: () -> Unit,
+    getDataRequested: (Boolean) -> Unit,
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
-    LaunchedEffect(Unit) {
-        snapshotFlow { isLoading.value }
-            .collect {
-                if (!it) swipeRefreshState.isRefreshing = isLoading.value
-            }
-    }
+    val lazyColumnState = rememberLazyListState()
+    swipeRefreshState.isRefreshing = isLoading
 
     SwipeRefresh(
         state = swipeRefreshState,
         onRefresh = {
             swipeRefreshState.isRefreshing = true
-            refreshRequired()
+            getDataRequested(true)
         }
     ) {
-        if (data.value.newsSubjectData.value.size == 0) {
-            swipeRefreshState.isRefreshing = isLoading.value
-
-            val loadingText = arrayOf(stringResource(id = R.string.text_loading))
-            val errorText = arrayOf("Nothing")
-            LazyColumn(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(if (isLoading.value) loadingText else errorText) {
-                        item -> Text(item)
-                }
-            }
-        }
-        else {
-            swipeRefreshState.isRefreshing = false
-            NewsSubjectLoadList(
-                newsDetailsClicked = newsDetailsClicked,
-                data.value.newsSubjectData.value,
-            )
-        }
-    }
-}
-
-// https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
-@Composable
-fun NewsSubjectLoadList(
-    newsDetailsClicked: MutableState<NewsDetailsClicked?>,
-    newsList: ArrayList<NewsSubjectItem>,
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        items(newsList) { item ->
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 5.dp, bottom = 5.dp)
-                    // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .clickable { newsDetailsClicked.value?.setViewDetailsNewsSubject(item) },
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 20.dp, end = 20.dp),
+            state = lazyColumnState,
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
+        ) {
+            items(data.value.newsSubjectData.value) { item ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp, bottom = 5.dp)
+                        // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .clickable { newsDetailsClickedData.value?.setViewDetailsNewsSubject(item) },
                 ) {
-                    Text(
-                        text = item.title!!,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(modifier = Modifier.size(5.dp))
-                    Text(
-                        text = item.content!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        // https://stackoverflow.com/a/65736376
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.size(20.dp))
-                    Text(
-                        text = getDateString(item.date!!, "dd/MM/yyyy"),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)
+                    ) {
+                        Text(
+                            text = item.title!!,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(modifier = Modifier.size(5.dp))
+                        Text(
+                            text = item.content!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            // https://stackoverflow.com/a/65736376
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(modifier = Modifier.size(20.dp))
+                        // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
+                        Text(
+                            text = getDateString(item.date!!, "dd/MM/yyyy"),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    content = {
+                        Spacer(modifier = Modifier.size(15.dp))
+                        if (isLoading) { }
+                    }
+                )
+            }
         }
+
+        InfiniteListHandler(
+            listState = lazyColumnState,
+            onLoadMore = {
+                getDataRequested(false)
+            }
+        )
     }
 }
 
 @Composable
-fun NewsSubjectDetails(newsSubjectItem: NewsSubjectItem) {
+fun NewsSubjectDetails(
+    newsSubjectItem: NewsSubjectItem,
+    linkClicked: (String) -> Unit
+) {
     Box(
         modifier = Modifier
             .padding(20.dp)
@@ -176,7 +162,6 @@ fun NewsSubjectDetails(newsSubjectItem: NewsSubjectItem) {
                     }
                 }
             }
-            val context = LocalContext.current
             ClickableText(
                 text = annotatedString,
                 style = MaterialTheme.typography.bodyMedium,
@@ -187,10 +172,7 @@ fun NewsSubjectDetails(newsSubjectItem: NewsSubjectItem) {
                             annotatedString
                                 .getStringAnnotations(item.position!!.toString(), it, it)
                                 .firstOrNull()
-                                ?.let { url ->
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url.item.lowercase()))
-                                    context.startActivity(intent)
-                                }
+                                ?.let { url -> linkClicked(url.item.lowercase()) }
                         }
                     } catch (_: Exception) {
                         // TODO: Exception for can't open link here!

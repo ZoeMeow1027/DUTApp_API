@@ -34,6 +34,7 @@ class NewsCacheFileRepository @Inject constructor(
         }
         else {
             // TODO: Append news global here.
+            newsCache.newsGlobalList.addAll(newsList)
         }
         exportSettings()
     }

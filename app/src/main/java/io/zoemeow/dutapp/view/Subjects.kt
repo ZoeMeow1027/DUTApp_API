@@ -133,8 +133,8 @@ fun SubjectsLoggedIn(cacheData: AccountCacheData, refreshRequest: () -> Unit) {
         ) {
             HorizontalPager(count = tabTitles.size, state = pagerState) { index ->
                 when (index) {
-                    0 -> SubjectsStudy(subjectListItem = cacheData.subjectScheduleData.value)
-                    1 -> SubjectsFee(subjectListItem = cacheData.subjectFeeData.value)
+                    0 -> SubjectsStudy(cacheData = cacheData)
+                    1 -> SubjectsFee(cacheData = cacheData)
                 }
             }
         }
@@ -142,12 +142,12 @@ fun SubjectsLoggedIn(cacheData: AccountCacheData, refreshRequest: () -> Unit) {
 }
 
 @Composable
-fun SubjectsStudy(subjectListItem: ArrayList<SubjectScheduleItem>) {
-    if (subjectListItem.size > 0) {
+fun SubjectsStudy(cacheData: AccountCacheData) {
+    if (cacheData.subjectScheduleData.size > 0) {
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
-            items(subjectListItem) {
+            items(cacheData.subjectScheduleData) {
                     item -> SubjectStudyItem(item = item)
             }
         }
@@ -155,13 +155,23 @@ fun SubjectsStudy(subjectListItem: ArrayList<SubjectScheduleItem>) {
 }
 
 @Composable
-fun SubjectsFee(subjectListItem: ArrayList<SubjectFeeItem>) {
-    if (subjectListItem.size > 0) {
+fun SubjectsFee(cacheData: AccountCacheData) {
+    if (cacheData.subjectFeeData.size > 0) {
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
-            items(subjectListItem) {
+            items(cacheData.subjectFeeData) {
                     item -> SubjectsFeeItem(item)
+            }
+            item {
+                Column {
+                    Text(
+                        "Total credit: ${cacheData.subjectCredit}"
+                    )
+                    Text(
+                        "Total money: ${cacheData.subjectMoney}"
+                    )
+                }
             }
         }
     }
@@ -179,6 +189,14 @@ fun SubjectStudyItem(item: SubjectScheduleItem) {
             .padding(top = 10.dp, bottom = 10.dp),
     ) {
         Text("${item.id}")
+        if (item.schedule_study != null) {
+            Column() {
+                for (i in item.schedule_study.schedule!!) {
+                    Text("DayOfWeek: ${i.day_of_week}")
+                    Text("Lesson: ${i.lesson?.start}-${i.lesson?.end}")
+                }
+            }
+        }
         Text("${item.name}")
         if (item.schedule_exam != null)
             Text(getDateString(
