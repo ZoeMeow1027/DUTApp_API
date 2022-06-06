@@ -14,7 +14,7 @@ fun getCurrentLesson(): Int {
     ) return hoursLesson.size - 1
 
 
-    for (i in 0..(hoursLesson.size - 1)) {
+    for (i in 0..(hoursLesson.size - 2)) {
         val d1 = Duration.parse("${hoursLesson[i]}h ${minuteLesson[i]}m")
         val d2 = Duration.parse("${hoursLesson[i+1]}h ${minuteLesson[i+1]}m")
         val current = Duration.parse("${hours}h ${minute}m")

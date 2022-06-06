@@ -387,6 +387,7 @@ class MainViewModel @Inject constructor(
 
             // TODO: Development for current day subjects here!
             getCurrentSubjectScheduleOnDay()
+            getCurrentSubjectScheduleOnTomorrow()
 
             isProcessingSubjectScheduleFee.value = false
         }
@@ -396,10 +397,14 @@ class MainViewModel @Inject constructor(
         ArrayList()
     )
 
+    internal val subjectScheduleTomorrow: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
+        ArrayList()
+    )
+
     fun getCurrentSubjectScheduleOnDay() {
-        // val day = getDayOfWeek()
-        val day = getDayOfWeek()
-        val lesson = getCurrentLesson()
+        var day = getDayOfWeek()
+        var lesson = getCurrentLesson()
+
         Log.d("io.zoemeow.dutapp", "DayOfWeek: $day")
 
         try {
@@ -411,6 +416,42 @@ class MainViewModel @Inject constructor(
                     }
                     .filter {
                         it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson }
+                    }
+                    .sortedBy {
+                        it.schedule_study?.schedule?.sortedBy {
+                                it2 -> it2.lesson?.start
+                        }?.get(0)?.lesson?.start
+                    }
+            )
+        }
+        catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+    }
+
+    fun getCurrentSubjectScheduleOnTomorrow() {
+        var day = getDayOfWeek() + 1
+        if (day > 6) {
+            day %= 7
+        }
+        var lesson = -1
+
+        Log.d("io.zoemeow.dutapp", "DayOfWeek: $day")
+
+        try {
+            subjectScheduleTomorrow.value.clear()
+            subjectScheduleTomorrow.value.addAll(
+                accCacheData.value.subjectScheduleData
+                    .filter {
+                        it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == day }
+                    }
+                    .filter {
+                        it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson }
+                    }
+                    .sortedBy {
+                        it.schedule_study?.schedule?.sortedBy {
+                                it2 -> it2.lesson?.start
+                        }?.get(0)?.lesson?.start
                     }
             )
         }
@@ -500,6 +541,7 @@ class MainViewModel @Inject constructor(
         // Load news cache for backup if internet is not available.
         loadCache()
         getCurrentSubjectScheduleOnDay()
+        getCurrentSubjectScheduleOnTomorrow()
 
         // Auto refresh news in server at startup.
         // refreshNewsGlobalFromServer()
