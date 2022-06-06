@@ -1,7 +1,12 @@
 package io.zoemeow.dutapp.view
 
+import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -36,12 +41,16 @@ fun Settings(mainViewModel: MainViewModel) {
 @Composable
 fun SettingsMain(mainViewModel: MainViewModel) {
     val dialogLogoutEnabled = remember { mutableStateOf(false) }
+    val optionsScrollState = rememberScrollState()
 
     DialogLogout(
         enabled = dialogLogoutEnabled,
         logoutRequest = { mainViewModel.logout() }
     )
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .verticalScroll(optionsScrollState)
+    ) {
         SettingsOptionAccount(
             mainViewModel,
             toggleLogout = { dialogLogoutEnabled.value = true }
