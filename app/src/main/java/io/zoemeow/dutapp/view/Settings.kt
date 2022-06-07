@@ -141,6 +141,7 @@ fun SettingsOptionAccount(
                 // Account Information
                 SettingsOptionLayout(
                     textAbove = "View Account Information",
+                    textBelow = "View your information which is saved in sv.dut.udn.vn",
                     clickable = { mainViewModel.accountPaneIndex.value = 3 }
                 )
                 // Re-login

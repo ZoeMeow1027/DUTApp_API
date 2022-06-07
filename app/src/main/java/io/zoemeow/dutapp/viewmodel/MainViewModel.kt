@@ -525,7 +525,7 @@ class MainViewModel @Inject constructor(
         }
 
     // Load news cache for backup if internet is not available.
-    private fun loadCache() {
+    private fun loadAppCache() {
         newsCacheData.value.newsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
         newsCacheData.value.newsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
         accCacheData.value.accountInformationData.value = accCacheFileRepo.getAccountInformation()
@@ -544,7 +544,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Load settings from appSettings.json.
+    // Load settings from appSettings.json, if needed.
     private fun loadSettings() {
 
     }
@@ -554,7 +554,7 @@ class MainViewModel @Inject constructor(
         loadSettings()
 
         // Load news cache for backup if internet is not available.
-        loadCache()
+        loadAppCache()
         getSubjectScheduleOnTodayAndTomorrow()
 
         // Auto refresh news in server at startup.
