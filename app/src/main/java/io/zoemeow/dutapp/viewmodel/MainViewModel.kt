@@ -11,10 +11,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.zoemeow.dutapp.R
-import io.zoemeow.dutapp.data.AccountCacheData
-import io.zoemeow.dutapp.data.ExceptionCacheData
-import io.zoemeow.dutapp.data.NewsCacheData
-import io.zoemeow.dutapp.data.NewsDetailsClickedData
+import io.zoemeow.dutapp.data.*
+import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.news.NewsGlobalItem
 import io.zoemeow.dutapp.model.news.NewsGlobalListItem
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
@@ -24,10 +22,8 @@ import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import io.zoemeow.dutapp.repository.*
 import io.zoemeow.dutapp.utils.getCurrentLesson
 import io.zoemeow.dutapp.utils.getDayOfWeek
+import io.zoemeow.dutapp.utils.getMD5FromString
 import kotlinx.coroutines.launch
-import java.math.BigInteger
-import java.security.MessageDigest
-import java.util.*
 import javax.inject.Inject
 import kotlin.collections.ArrayList
 
@@ -43,51 +39,39 @@ class MainViewModel @Inject constructor(
     private val exceptionCacheData: MutableState<ExceptionCacheData> = mutableStateOf(ExceptionCacheData())
 
     // Get SnackBar host state from main activity
-    private val mainActivitySnackBarHostState: MutableState<SnackbarHostState?> = mutableStateOf(null)
-    fun setSnackBarHostState(item: SnackbarHostState) {
-        mainActivitySnackBarHostState.value = item
-    }
+    internal val mainActivitySnackBarHostState: MutableState<SnackbarHostState?> = mutableStateOf(null)
 
     // Get context main activity
-    private val mainActivityContext: MutableState<Context?> = mutableStateOf(null)
-    fun setContext(item: Context) {
-        mainActivityContext.value = item
-    }
+    internal val mainActivityContext: MutableState<Context?> = mutableStateOf(null)
 
     // News Details View when clicked a news.
     internal val newsDetailsClickedData: MutableState<NewsDetailsClickedData?> = mutableStateOf(null)
-    fun setNewsDetailClicked(item: NewsDetailsClickedData) {
-        newsDetailsClickedData.value = item
-    }
+
+    // Initialize is processing data
+    internal val isProcessingData: IsProcessingData = IsProcessingData()
 
     // News data with cache (for easier manage).
     internal val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
 
-    // Generate md5 from string.
-    private fun md5(input: String): String {
-        val md = MessageDigest.getInstance("MD5")
-        return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-    }
-
     // Get news global.
     // Check if is getting news global
-    internal val isProcessingGlobal: MutableState<Boolean> = mutableStateOf(false)
     private val pageNewsGlobalCurrent = mutableStateOf(1)
-    private val pageNewsGlobalPreviousResult = mutableStateOf(false)
 
     // Get news global from server
     fun getNewsGlobal(force: Boolean) {
         viewModelScope.launch {
             if (force) {
                 pageNewsGlobalCurrent.value = 1
-                pageNewsGlobalPreviousResult.value = false
-                newsCacheFileRepo.deleteAllNewsGlobal()
+                isProcessingData["NewsGlobal"] = ProcessResult.Failed
             }
 
-            if (pageNewsGlobalPreviousResult.value)
-                pageNewsGlobalCurrent.value += 1
+            if (
+                if (isProcessingData["NewsGlobal"] != null)
+                    isProcessingData["NewsGlobal"]!!.valueProcess.value == ProcessResult.Successful
+                else false
+            ) pageNewsGlobalCurrent.value += 1
 
-            pageNewsGlobalPreviousResult.value = refreshNewsGlobalFromServer(
+            refreshNewsGlobalFromServer(
                 pageNewsGlobalCurrent.value,
                 !force
             )
@@ -95,14 +79,13 @@ class MainViewModel @Inject constructor(
     }
 
     // Refresh news global
-    private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false): Boolean {
-        var result = false
-        isProcessingGlobal.value = true
+    private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false) {
+        isProcessingData["NewsGlobal"] = ProcessResult.Running
 
         try {
             val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
 
-            if (dataGlobalFromInternet.news_list != null) {
+            if ((dataGlobalFromInternet.news_list != null) && (dataGlobalFromInternet.news_list.size > 0)) {
                 val list = ArrayList<NewsGlobalItem>()
                 for (newsItem: NewsGlobalItem in dataGlobalFromInternet.news_list) {
                     list.add(
@@ -111,7 +94,7 @@ class MainViewModel @Inject constructor(
                             title = newsItem.title,
                             content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
-                            id = md5("${newsItem.date}-${newsItem.title}")
+                            id = getMD5FromString("${newsItem.date}-${newsItem.title}")
                         )
                     )
                 }
@@ -123,38 +106,40 @@ class MainViewModel @Inject constructor(
             } else throw Exception("News list empty.")
 
             // Return true
-            result = true
+            isProcessingData["NewsGlobal"] = ProcessResult.Successful
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
+            ex.printStackTrace()
+
+            // Return false
+            isProcessingData["NewsGlobal"] = ProcessResult.Failed
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
                 mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
             )
         }
-        isProcessingGlobal.value = false
-        return result
     }
 
     // Get news subjects
     // Check if is getting news subject
-    internal val isProcessingSubject: MutableState<Boolean> = mutableStateOf(false)
     private val pageNewSubjectCurrent = mutableStateOf(1)
-    private val pageNewsSubjectPreviousResult = mutableStateOf(false)
 
     fun getNewsSubject(force: Boolean) {
         viewModelScope.launch {
             if (force) {
                 pageNewSubjectCurrent.value = 1
-                pageNewsSubjectPreviousResult.value = false
-                newsCacheFileRepo.deleteAllNewsSubject()
+                isProcessingData["NewsSubject"] = ProcessResult.Failed
             }
 
-            if (pageNewsSubjectPreviousResult.value)
-                pageNewSubjectCurrent.value += 1
+            if (
+                if (isProcessingData["NewsSubject"] != null)
+                    isProcessingData["NewsSubject"]!!.valueProcess.value == ProcessResult.Successful
+                else false
+            ) pageNewSubjectCurrent.value += 1
 
-            pageNewsSubjectPreviousResult.value = refreshNewsSubjectsFromServer(
+            refreshNewsSubjectsFromServer(
                 pageNewSubjectCurrent.value,
                 !force
             )
@@ -162,14 +147,13 @@ class MainViewModel @Inject constructor(
     }
 
     // Refresh news subject
-    private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false): Boolean {
-        var result = false
-        isProcessingSubject.value = true
+    private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false) {
+        isProcessingData["NewsSubject"] = ProcessResult.Running
 
         try {
             val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
 
-            if (dataSubjectsFromInternet.news_list != null) {
+            if ((dataSubjectsFromInternet.news_list != null) && (dataSubjectsFromInternet.news_list.size > 0)) {
                 val list = ArrayList<NewsSubjectItem>()
                 for (newsItem: NewsSubjectItem in dataSubjectsFromInternet.news_list) {
                     list.add(
@@ -178,7 +162,7 @@ class MainViewModel @Inject constructor(
                             title = newsItem.title,
                             content = newsItem.content,
                             links = ArrayList(newsItem.links ?: ArrayList()),
-                            id = md5("${newsItem.date}-${newsItem.title}")
+                            id = getMD5FromString("${newsItem.date}-${newsItem.title}")
                         )
                     )
                 }
@@ -190,19 +174,20 @@ class MainViewModel @Inject constructor(
             } else throw Exception("News list empty.")
 
             // Return true
-            result = true
+            isProcessingData["NewsSubject"] = ProcessResult.Successful
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
+            ex.printStackTrace()
+
+            // Return false
+            isProcessingData["NewsSubject"] = ProcessResult.Failed
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
                 mainActivityContext.value?.getString(R.string.navnaws_notify_loadnewsfailed)!!
             )
         }
-
-        isProcessingSubject.value = false
-        return result
     }
 
     // Settings View.
@@ -220,15 +205,12 @@ class MainViewModel @Inject constructor(
     // Check if have auto login
     private val accLoginStartup = mutableStateOf(false)
 
-    // Check if login is in progress
-    internal val isProcessingLogin = mutableStateOf(false)
-
     // Log in using your account
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             // Navigate to page logging in
             accountPaneIndex.value = 2
-            isProcessingLogin.value = true
+            isProcessingData["LoggingIn"] = ProcessResult.Running
 
             try {
                 // Login
@@ -248,7 +230,8 @@ class MainViewModel @Inject constructor(
                     }
 
                     // Pre-load subject schedule, fee and account information
-                    refreshSubjectScheduleAndFee()
+                    refreshSubjectSchedule()
+                    refreshSubjectFee()
                     refreshAccountInfo()
                 }
             }
@@ -259,10 +242,10 @@ class MainViewModel @Inject constructor(
 
             // All result will be returned to main page.
             accountPaneIndex.value = 0
-            isProcessingLogin.value = false
 
             // If logged in (check session id is not empty)
             if (accCacheData.value.sessionID.value.isNotEmpty()) {
+                isProcessingData["LoggingIn"] = ProcessResult.Successful
                 // Navigate to page logged in
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
@@ -271,6 +254,7 @@ class MainViewModel @Inject constructor(
             // If failed login at startup, will clear all auto login settings
             // and return back to login page
             else if (accLoginStartup.value) {
+                isProcessingData["LoggingIn"] = ProcessResult.Failed
                 accountPaneIndex.value = 0
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
@@ -279,6 +263,7 @@ class MainViewModel @Inject constructor(
             }
             // Any failed while logging in will be return to login/not logged in.
             else {
+                isProcessingData["LoggingIn"] = ProcessResult.Failed
                 accountPaneIndex.value = 1
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
@@ -300,13 +285,15 @@ class MainViewModel @Inject constructor(
                 // Navigate to page not logged in
                 accountPaneIndex.value = 0
 
+                // Logout
+                viewModelScope.launch {
+                    dutAccRepo.dutLogout(temp)
+                }
+
                 // Show snack bar logged out
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loggedout)!!
                 )
-
-                // Logout
-                dutAccRepo.dutLogout(temp)
             }
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
@@ -331,20 +318,18 @@ class MainViewModel @Inject constructor(
         accCacheFileRepo.deleteAccountInformation()
     }
 
-    internal var isProcessingSubjectScheduleFee = mutableStateOf(false)
-
     // Get subject schedule and subject fee
-    fun refreshSubjectScheduleAndFee() {
+    fun refreshSubjectSchedule() {
         viewModelScope.launch {
             try {
-                isProcessingSubjectScheduleFee.value = true
+                isProcessingData["SubjectSchedule"] = ProcessResult.Running
 
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
                     accCacheData.value.sessionID.value,
-                    appSettingsRepo.subjectYear,
-                    appSettingsRepo.subjectSemester,
-                    appSettingsRepo.subjectInSummer
+                    appSettingsRepo.subjectSchoolYearSettings.subjectYear,
+                    appSettingsRepo.subjectSchoolYearSettings.subjectSemester,
+                    appSettingsRepo.subjectSchoolYearSettings.subjectInSummer
                 )
 
                 if (dataSubjectScheduleFromInternet.schedule_list != null &&
@@ -359,15 +344,34 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit)
                 }
 
+                isProcessingData["SubjectSchedule"] = ProcessResult.Successful
+            }
+            // Any exception will be here!
+            catch (ex: Exception) {
+                exceptionCacheData.value.addException(ex)
+                ex.printStackTrace()
+                isProcessingData["SubjectSchedule"] = ProcessResult.Failed
+            }
+
+            // TODO: Development for current day subjects here!
+            getSubjectScheduleOnTodayAndTomorrow()
+        }
+    }
+
+    fun refreshSubjectFee() {
+        viewModelScope.launch {
+            try {
+                isProcessingData["SubjectFee"] = ProcessResult.Running
+
                 // Get subject fee
                 val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
                     accCacheData.value.sessionID.value,
-                    appSettingsRepo.subjectYear,
-                    appSettingsRepo.subjectSemester,
-                    appSettingsRepo.subjectInSummer
+                    appSettingsRepo.subjectSchoolYearSettings.subjectYear,
+                    appSettingsRepo.subjectSchoolYearSettings.subjectSemester,
+                    appSettingsRepo.subjectSchoolYearSettings.subjectInSummer
                 )
                 if (dataSubjectFeeFromInternet.fee_list != null &&
-                        dataSubjectFeeFromInternet.fee_list.size > 0) {
+                    dataSubjectFeeFromInternet.fee_list.size > 0) {
                     // Add to cache
                     accCacheData.value.subjectFeeData = dataSubjectFeeFromInternet.fee_list
                     accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit!!
@@ -379,21 +383,19 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectCreditTotal(dataSubjectFeeFromInternet.total_credit)
                     accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money)
                 }
+
+                isProcessingData["SubjectFee"] = ProcessResult.Successful
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
+                ex.printStackTrace()
+                isProcessingData["SubjectFee"] = ProcessResult.Failed
             }
-
-            // TODO: Development for current day subjects here!
-            getCurrentSubjectScheduleOnDay()
-            getCurrentSubjectScheduleOnTomorrow()
-
-            isProcessingSubjectScheduleFee.value = false
         }
     }
 
-    internal val subjectScheduleDayOfWeek: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
+    internal val subjectScheduleToday: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
         ArrayList()
     )
 
@@ -401,72 +403,93 @@ class MainViewModel @Inject constructor(
         ArrayList()
     )
 
-    fun getCurrentSubjectScheduleOnDay() {
-        var day = getDayOfWeek()
+    private fun getSubjectScheduleInDayOfWeek(
+        plusDayOfWeek: Int = 0,
+        plusLesson: Int = 0,
+    ): ArrayList<SubjectScheduleItem> {
+        // Set lesson first
         var lesson = getCurrentLesson()
+        lesson += if (plusLesson > 0) plusLesson else 0
 
-        Log.d("io.zoemeow.dutapp", "DayOfWeek: $day")
+        // Set day of week
+        // 0: Sunday to 6: Saturday
+        // If plusDayOfWeek > 0, plusLesson will be 0
+        var dayOfWeek = getDayOfWeek()
+        if (plusDayOfWeek > 0) {
+            dayOfWeek += plusDayOfWeek
+            // If dayOfWeek > 6, will return to new week
+            if (dayOfWeek > 6) dayOfWeek %= 7
+            // Set lesson to 0
+            lesson = 0
+        }
+
+        // Initialize a temporary array list for subject schedule item
+        val result = ArrayList<SubjectScheduleItem>()
 
         try {
-            subjectScheduleDayOfWeek.value.clear()
-            subjectScheduleDayOfWeek.value.addAll(
+            result.addAll(
                 accCacheData.value.subjectScheduleData
-                    .filter {
-                        it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == day }
-                    }
-                    .filter {
-                        it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson }
-                    }
+                        // Filter day of week
+                    .filter { it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == dayOfWeek } }
+                        // Filter lesson
+                    .filter { it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson } }
+                        // Sort subjects by lesson start
                     .sortedBy {
                         it.schedule_study?.schedule?.sortedBy {
                                 it2 -> it2.lesson?.start
                         }?.get(0)?.lesson?.start
                     }
             )
-        }
-        catch (ex: Exception) {
+        } catch (ex: Exception) {
             ex.printStackTrace()
         }
+
+        // Return result
+        return result
     }
 
-    fun getCurrentSubjectScheduleOnTomorrow() {
-        var day = getDayOfWeek() + 1
-        if (day > 6) {
-            day %= 7
+    fun getSubjectScheduleOnTodayAndTomorrow() {
+        // Current subject schedule today
+        try {
+            subjectScheduleToday.value.clear()
+            subjectScheduleToday.value.addAll(
+                getSubjectScheduleInDayOfWeek(0, 0)
+            )
         }
-        var lesson = -1
+        catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
+            ex.printStackTrace()
+        }
 
-        Log.d("io.zoemeow.dutapp", "DayOfWeek: $day")
-
+        // Current subject schedule tomorrow
         try {
             subjectScheduleTomorrow.value.clear()
             subjectScheduleTomorrow.value.addAll(
-                accCacheData.value.subjectScheduleData
-                    .filter {
-                        it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == day }
-                    }
-                    .filter {
-                        it.schedule_study!!.schedule!!.any { lessonGet -> lessonGet.lesson!!.end!! >= lesson }
-                    }
-                    .sortedBy {
-                        it.schedule_study?.schedule?.sortedBy {
-                                it2 -> it2.lesson?.start
-                        }?.get(0)?.lesson?.start
-                    }
+                getSubjectScheduleInDayOfWeek(1, 0)
             )
         }
         catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
         }
     }
 
-    internal val isProcessingAccountInfo = mutableStateOf(false)
+    fun reloadViewSubjectScheduleOnDay() {
+        viewModelScope.launch {
+            refreshNewsGlobalFromServer()
+            refreshNewsSubjectsFromServer()
+        }
+        if (accCacheData.value.sessionID.value.isNotEmpty()) {
+            refreshSubjectSchedule()
+            refreshSubjectFee()
+        }
+    }
 
     // Get account information
     private fun refreshAccountInfo() {
         viewModelScope.launch {
             try {
-                isProcessingAccountInfo.value = true
+                isProcessingData["AccInfo"] = ProcessResult.Running
 
                 // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
@@ -478,13 +501,15 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.account_info)
                     accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
                 }
+
+                isProcessingData["AccInfo"] = ProcessResult.Successful
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
+                ex.printStackTrace()
+                isProcessingData["AccInfo"] = ProcessResult.Failed
             }
-
-            isProcessingAccountInfo.value = false
         }
     }
 
@@ -493,21 +518,11 @@ class MainViewModel @Inject constructor(
         mainActivityContext.value?.startActivity(intent)
     }
 
-    fun getSubjectSchoolYearSettings(): SubjectSchoolYearSettings {
-        return SubjectSchoolYearSettings(
-            appSettingsRepo.subjectDefault,
-            appSettingsRepo.subjectYear,
-            appSettingsRepo.subjectSemester,
-            appSettingsRepo.subjectInSummer
-        )
-    }
-
-    fun setSubjectSchoolYearSettings(item: SubjectSchoolYearSettings) {
-        appSettingsRepo.subjectDefault = item.subjectDefault
-        appSettingsRepo.subjectYear = item.subjectYear
-        appSettingsRepo.subjectSemester = item.subjectSemester
-        appSettingsRepo.subjectInSummer = item.subjectInSummer
-    }
+    var subjectSchoolYearSettings: SubjectSchoolYearSettings
+        get() = appSettingsRepo.subjectSchoolYearSettings
+        set(value) {
+            appSettingsRepo.subjectSchoolYearSettings = value
+        }
 
     // Load news cache for backup if internet is not available.
     private fun loadCache() {
@@ -540,8 +555,7 @@ class MainViewModel @Inject constructor(
 
         // Load news cache for backup if internet is not available.
         loadCache()
-        getCurrentSubjectScheduleOnDay()
-        getCurrentSubjectScheduleOnTomorrow()
+        getSubjectScheduleOnTodayAndTomorrow()
 
         // Auto refresh news in server at startup.
         // refreshNewsGlobalFromServer()

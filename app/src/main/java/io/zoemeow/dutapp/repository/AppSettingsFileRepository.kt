@@ -2,6 +2,7 @@ package io.zoemeow.dutapp.repository
 
 import com.google.gson.Gson
 import io.zoemeow.dutapp.model.AppSettings
+import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import java.io.BufferedReader
 import java.io.File
 import javax.inject.Inject
@@ -30,31 +31,10 @@ class AppSettingsFileRepository @Inject constructor(private val file: File) {
             exportSettings()
         }
 
-    var subjectDefault: Boolean
-        get() = appSettings.subjectSchoolYearSettings.subjectDefault
+    var subjectSchoolYearSettings: SubjectSchoolYearSettings
+        get() = appSettings.subjectSchoolYearSettings
         set(value) {
-            appSettings.subjectSchoolYearSettings.subjectDefault = value
-            exportSettings()
-        }
-
-    var subjectYear: Int
-        get() = appSettings.subjectSchoolYearSettings.subjectYear
-        set(value) {
-            appSettings.subjectSchoolYearSettings.subjectYear = value
-            exportSettings()
-        }
-
-    var subjectSemester: Int
-        get() = appSettings.subjectSchoolYearSettings.subjectSemester
-        set(value) {
-            appSettings.subjectSchoolYearSettings.subjectSemester = value
-            exportSettings()
-        }
-
-    var subjectInSummer: Boolean
-        get() = appSettings.subjectSchoolYearSettings.subjectInSummer
-        set(value) {
-            appSettings.subjectSchoolYearSettings.subjectInSummer = value
+            appSettings.subjectSchoolYearSettings = value
             exportSettings()
         }
 

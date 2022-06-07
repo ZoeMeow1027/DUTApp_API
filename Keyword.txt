@@ -1,0 +1,7 @@
+MainViewModel & IsProcessingData
+- NewsGlobal: Is processing or result in news global
+- NewsSubject: Is processing or result in news subject
+- SubjectSchedule: Is processing or result in subject schedule
+- SubjectFee: Is processing or result in subject fee
+- AccInfo: Is processing or result in account information
+- LoggingIn: Check if login is in progress

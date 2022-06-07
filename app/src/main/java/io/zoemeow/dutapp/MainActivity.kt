@@ -40,6 +40,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    var mainViewModel: MainViewModel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -49,10 +51,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    mainViewModel = viewModel<MainViewModel>()
+                    MainScreen(mainViewModel!!)
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        mainViewModel?.reloadViewSubjectScheduleOnDay()
     }
 }
 
@@ -60,23 +69,22 @@ class MainActivity : ComponentActivity() {
     ExperimentalComposeUiApi::class, ExperimentalPagerApi::class
 )
 @Composable
-fun MainScreen() {
+fun MainScreen(mainViewModel: MainViewModel) {
     val navController = rememberNavController()
-    val mainViewModel = viewModel<MainViewModel>()
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    mainViewModel.setNewsDetailClicked(NewsDetailsClickedData(
+    mainViewModel.newsDetailsClickedData.value = NewsDetailsClickedData(
         showSheetRequested = {
             scope.launch { sheetState.show() }
         },
         hideSheetRequested = {
             scope.launch { sheetState.hide() }
         }
-    ))
-    mainViewModel.setSnackBarHostState(snackBarHostState)
-    mainViewModel.setContext(LocalContext.current)
+    )
+    mainViewModel.mainActivitySnackBarHostState.value = snackBarHostState
+    mainViewModel.mainActivityContext.value = LocalContext.current
 
     // Best solution (at this time): https://stackoverflow.com/a/69052933
     // However, this isn't a good idea, because animation will be executed for 1s.
