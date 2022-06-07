@@ -20,6 +20,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.AccountCacheData
+import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.subject.SubjectFeeItem
 import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 import io.zoemeow.dutapp.pagerTabIndicatorOffset
@@ -28,17 +29,32 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
+    val isLoadingLoggingIn = (
+            if (mainViewModel.isProcessingData["LoggingIn"] != null)
+                mainViewModel.isProcessingData["LoggingIn"]!!.valueProcess.value == ProcessResult.Running
+            else false
+            )
+
     if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) {
-        if (mainViewModel.isProcessingLogin.value)
+        if (isLoadingLoggingIn)
             AccountPageLoggingIn()
         else SubjectsNotLoggedIn()
     }
     else {
-        when (mainViewModel.isProcessingSubjectScheduleFee.value) {
+        val isLoadingSubjectSchedule = (
+                if (mainViewModel.isProcessingData["SubjectSchedule"] != null)
+                    mainViewModel.isProcessingData["SubjectSchedule"]!!.valueProcess.value == ProcessResult.Running
+                else false
+                )
+
+        when (isLoadingSubjectSchedule) {
             true -> SubjectsLoadingSubject()
             false -> SubjectsLoggedIn(
                 mainViewModel.accCacheData.value,
-                refreshRequest = { mainViewModel.refreshSubjectScheduleAndFee() }
+                refreshRequest = {
+                    mainViewModel.refreshSubjectSchedule()
+                    mainViewModel.refreshSubjectFee()
+                }
             )
         }
     }

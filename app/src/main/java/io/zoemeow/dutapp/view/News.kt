@@ -17,6 +17,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import io.zoemeow.dutapp.R
+import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.pagerTabIndicatorOffset
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -78,23 +79,34 @@ fun News(mainViewModel: MainViewModel) {
                         )
                     }
                 }
+                val isLoadingGlobal = (
+                        if (mainViewModel.isProcessingData["NewsGlobal"] != null)
+                            mainViewModel.isProcessingData["NewsGlobal"]!!.valueProcess.value == ProcessResult.Running
+                        else false
+                        )
+                val isLoadingSubject = (
+                        if (mainViewModel.isProcessingData["NewsSubject"] != null)
+                            mainViewModel.isProcessingData["NewsSubject"]!!.valueProcess.value == ProcessResult.Running
+                        else false
+                        )
+
                 HorizontalPager(count = tabTitles.size, state = pagerState) { index ->
                     when (index) {
                         0 -> NewsGlobalViewHost(
                             newsDetailsClickedData = mainViewModel.newsDetailsClickedData,
-                            isLoading = mainViewModel.isProcessingGlobal.value,
+                            isLoading = isLoadingGlobal,
                             data = mainViewModel.newsCacheData,
                             getDataRequested = { forceValue ->
-                                if (!mainViewModel.isProcessingGlobal.value)
+                                if (!isLoadingGlobal)
                                     mainViewModel.getNewsGlobal(force = forceValue)
                             },
                         )
                         1 -> NewsSubjectViewHost(
                             newsDetailsClickedData = mainViewModel.newsDetailsClickedData,
-                            isLoading = mainViewModel.isProcessingSubject.value,
+                            isLoading = isLoadingSubject,
                             data = mainViewModel.newsCacheData,
                             getDataRequested = { forceValue ->
-                                if (!mainViewModel.isProcessingSubject.value)
+                                if (!isLoadingSubject)
                                     mainViewModel.getNewsSubject(force = forceValue)
                             },
                         )

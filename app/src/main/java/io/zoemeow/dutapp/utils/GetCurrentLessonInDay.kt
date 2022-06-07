@@ -10,9 +10,9 @@ fun getCurrentLesson(): Int {
     val minute = Calendar.getInstance().get(Calendar.MINUTE)
 
     if (hours > hoursLesson[hoursLesson.size - 1] ||
-        (hours == hoursLesson[hoursLesson.size - 1] && minute > minuteLesson[minuteLesson.size - 1])
+        (hours == hoursLesson[hoursLesson.size - 1] && minute > minuteLesson[minuteLesson.size - 1]) ||
+        hours < 5
     ) return hoursLesson.size - 1
-
 
     for (i in 0..(hoursLesson.size - 2)) {
         val d1 = Duration.parse("${hoursLesson[i]}h ${minuteLesson[i]}m")

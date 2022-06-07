@@ -13,11 +13,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.utils.getCurrentLesson
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
 fun Home(mainViewModel: MainViewModel) {
+    val isLoadingSubject = (
+            if (mainViewModel.isProcessingData["SubjectSchedule"] != null)
+                mainViewModel.isProcessingData["SubjectSchedule"]!!.valueProcess.value == ProcessResult.Running
+            else false
+            )
+
     Column() {
         // What's going on...
         // Today lesson
@@ -53,12 +60,12 @@ fun Home(mainViewModel: MainViewModel) {
                 Spacer(modifier = Modifier.size(10.dp))
 
                 // Current lesson, if done loading
-                if (!mainViewModel.isProcessingSubjectScheduleFee.value) {
+                if (!isLoadingSubject) {
                     LazyColumn(
                         horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.Top
                     ) {
-                        items(mainViewModel.subjectScheduleDayOfWeek.value) { item ->
+                        items(mainViewModel.subjectScheduleToday.value) { item ->
                             Box(
                                 modifier = Modifier.fillMaxWidth().wrapContentHeight()
                                     .padding(top = 5.dp, bottom = 5.dp)
@@ -140,7 +147,7 @@ fun Home(mainViewModel: MainViewModel) {
                 Spacer(modifier = Modifier.size(10.dp))
 
                 // Tomorrow lesson
-                if (!mainViewModel.isProcessingSubjectScheduleFee.value) {
+                if (!isLoadingSubject) {
                     LazyColumn(
                         horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.Top

@@ -1,9 +1,6 @@
 package io.zoemeow.dutapp.view
 
-import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,14 +12,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import io.zoemeow.dutapp.BuildConfig
+import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
 fun Settings(mainViewModel: MainViewModel) {
+    val isLoadingInfo = (
+            if (mainViewModel.isProcessingData["AccInfo"] != null)
+                mainViewModel.isProcessingData["AccInfo"]!!.valueProcess.value == ProcessResult.Running
+            else false
+            )
     when (mainViewModel.accountPaneIndex.value) {
         0 -> SettingsMain(mainViewModel)
         1 -> AccountPageLogin(
@@ -32,7 +36,7 @@ fun Settings(mainViewModel: MainViewModel) {
         2 -> AccountPageLoggingIn()
         3 -> AccountPageInformation(
             accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
-            isLoading = mainViewModel.isProcessingAccountInfo.value,
+            isLoading = isLoadingInfo,
         )
     }
 }
@@ -55,13 +59,13 @@ fun SettingsMain(mainViewModel: MainViewModel) {
             mainViewModel,
             toggleLogout = { dialogLogoutEnabled.value = true }
         )
-        Divider(thickness = 0.5.dp)
+        SettingsOptionDivider()
         SettingsOptionSubject(
-            mainViewModel.getSubjectSchoolYearSettings()
+            mainViewModel.subjectSchoolYearSettings
         )
-        Divider(thickness = 0.5.dp)
+        SettingsOptionDivider()
         SettingsOptionAppSettings()
-        Divider(thickness = 0.5.dp)
+        SettingsOptionDivider()
         SettingsOptionAppInfo(
             linkClicked = { mainViewModel.openLinkInBrowser(it) }
         )
@@ -194,6 +198,7 @@ fun SettingsOptionAppSettings() {
 fun SettingsOptionAppInfo(
     linkClicked: (String) -> Unit
 ) {
+
     Column {
         SettingsOptionTitle(text = "App information")
         SettingsOptionLayout(
@@ -215,6 +220,14 @@ fun SettingsOptionAppInfo(
 }
 
 @Composable
+fun SettingsOptionDivider() {
+    Divider(
+        thickness = 1.dp,
+        color = Color.LightGray
+    )
+}
+
+@Composable
 fun SettingsOptionTitle(text: String) {
     Box(
         modifier = Modifier
@@ -226,7 +239,8 @@ fun SettingsOptionTitle(text: String) {
             Text(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp),
                 text = text,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
