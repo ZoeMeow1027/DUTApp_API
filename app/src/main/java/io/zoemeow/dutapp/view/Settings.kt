@@ -23,15 +23,15 @@ import io.zoemeow.dutapp.viewmodel.MainViewModel
 @Composable
 fun Settings(mainViewModel: MainViewModel) {
     val isLoadingInfo = (
-            if (mainViewModel.isProcessingData["AccInfo"] != null)
-                mainViewModel.isProcessingData["AccInfo"]!!.valueProcess.value == ProcessResult.Running
+            if (mainViewModel.variableData.get<ProcessResult>("AccInfo") != null)
+                mainViewModel.variableData.get<ProcessResult>("AccInfo")!!.value.value == ProcessResult.Running
             else false
             )
-    when (mainViewModel.accountPaneIndex.value) {
+    when (mainViewModel.variableData.get<Int>("SettingsPanelIndex")!!.value.value!!) {
         0 -> SettingsMain(mainViewModel)
         1 -> AccountPageLogin(
             mainViewModel = mainViewModel,
-            backRequest = { mainViewModel.accountPaneIndex.value = 0 }
+            backRequest = { mainViewModel.variableData["SettingsPanelIndex"] = 0 }
         )
         2 -> AccountPageLoggingIn()
         3 -> AccountPageInformation(
@@ -132,7 +132,7 @@ fun SettingsOptionAccount(
             SettingsOptionLayout(
                 textAbove = "Login",
                 textBelow = "To use more app features, you need to sign in.",
-                clickable = { mainViewModel.accountPaneIndex.value = 1 }
+                clickable = { mainViewModel.variableData["SettingsPanelIndex"] = 1 }
             )
         }
         // If logged in/offline mode and logged in previously.
@@ -142,7 +142,7 @@ fun SettingsOptionAccount(
                 SettingsOptionLayout(
                     textAbove = "View Account Information",
                     textBelow = "View your information which is saved in sv.dut.udn.vn",
-                    clickable = { mainViewModel.accountPaneIndex.value = 3 }
+                    clickable = { mainViewModel.variableData["SettingsPanelIndex"] = 3 }
                 )
                 // Re-login
                 if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {

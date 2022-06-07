@@ -1,7 +1,15 @@
 MainViewModel & IsProcessingData
 - NewsGlobal: Is processing or result in news global
+- NewsGlobalPage: Current news global page
 - NewsSubject: Is processing or result in news subject
+- NewsSubjectPage: Current news subject page
 - SubjectSchedule: Is processing or result in subject schedule
 - SubjectFee: Is processing or result in subject fee
 - AccInfo: Is processing or result in account information
+- AccLoginStartup: Is auto logging in at startup
 - LoggingIn: Check if login is in progress
+- SettingsPanelIndex: Current panel in settings pane.
+  - 0: Settings (and/or not logged in page)
+  - 1: Login page
+  - 2: Logging in page
+  - 3: Account Information page

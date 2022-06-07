@@ -20,8 +20,8 @@ import io.zoemeow.dutapp.viewmodel.MainViewModel
 @Composable
 fun Home(mainViewModel: MainViewModel) {
     val isLoadingSubject = (
-            if (mainViewModel.isProcessingData["SubjectSchedule"] != null)
-                mainViewModel.isProcessingData["SubjectSchedule"]!!.valueProcess.value == ProcessResult.Running
+            if (mainViewModel.variableData.get<ProcessResult>("SubjectSchedule") != null)
+                mainViewModel.variableData.get<ProcessResult>("SubjectSchedule")!!.value.value == ProcessResult.Running
             else false
             )
 
