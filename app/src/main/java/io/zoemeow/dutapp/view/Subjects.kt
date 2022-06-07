@@ -30,8 +30,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
     val isLoadingLoggingIn = (
-            if (mainViewModel.isProcessingData["LoggingIn"] != null)
-                mainViewModel.isProcessingData["LoggingIn"]!!.valueProcess.value == ProcessResult.Running
+            if (mainViewModel.variableData.get<ProcessResult>("LoggingIn") != null)
+                mainViewModel.variableData.get<ProcessResult>("LoggingIn")!!.value.value == ProcessResult.Running
             else false
             )
 
@@ -42,8 +42,8 @@ fun Subjects(mainViewModel: MainViewModel) {
     }
     else {
         val isLoadingSubjectSchedule = (
-                if (mainViewModel.isProcessingData["SubjectSchedule"] != null)
-                    mainViewModel.isProcessingData["SubjectSchedule"]!!.valueProcess.value == ProcessResult.Running
+                if (mainViewModel.variableData.get<ProcessResult>("SubjectSchedule") != null)
+                    mainViewModel.variableData.get<ProcessResult>("SubjectSchedule")!!.value.value == ProcessResult.Running
                 else false
                 )
 

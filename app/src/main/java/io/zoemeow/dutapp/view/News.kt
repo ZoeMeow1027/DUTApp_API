@@ -80,13 +80,13 @@ fun News(mainViewModel: MainViewModel) {
                     }
                 }
                 val isLoadingGlobal = (
-                        if (mainViewModel.isProcessingData["NewsGlobal"] != null)
-                            mainViewModel.isProcessingData["NewsGlobal"]!!.valueProcess.value == ProcessResult.Running
+                        if (mainViewModel.variableData.get<ProcessResult>("NewsGlobal") != null)
+                            mainViewModel.variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Running
                         else false
                         )
                 val isLoadingSubject = (
-                        if (mainViewModel.isProcessingData["NewsSubject"] != null)
-                            mainViewModel.isProcessingData["NewsSubject"]!!.valueProcess.value == ProcessResult.Running
+                        if (mainViewModel.variableData.get<ProcessResult>("NewsSubject") != null)
+                            mainViewModel.variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Running
                         else false
                         )
 

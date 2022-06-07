@@ -25,7 +25,6 @@ import io.zoemeow.dutapp.utils.getDayOfWeek
 import io.zoemeow.dutapp.utils.getMD5FromString
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.ArrayList
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -48,31 +47,27 @@ class MainViewModel @Inject constructor(
     internal val newsDetailsClickedData: MutableState<NewsDetailsClickedData?> = mutableStateOf(null)
 
     // Initialize is processing data
-    internal val isProcessingData: IsProcessingData = IsProcessingData()
+    internal val variableData: VariableData = VariableData()
 
     // News data with cache (for easier manage).
     internal val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
-
-    // Get news global.
-    // Check if is getting news global
-    private val pageNewsGlobalCurrent = mutableStateOf(1)
 
     // Get news global from server
     fun getNewsGlobal(force: Boolean) {
         viewModelScope.launch {
             if (force) {
-                pageNewsGlobalCurrent.value = 1
-                isProcessingData["NewsGlobal"] = ProcessResult.Failed
+                variableData["NewsGlobalPage"] = 1
+                variableData.set("NewsGlobal", ProcessResult.Failed)
             }
 
             if (
-                if (isProcessingData["NewsGlobal"] != null)
-                    isProcessingData["NewsGlobal"]!!.valueProcess.value == ProcessResult.Successful
+                if (variableData.get<ProcessResult>("NewsGlobal") != null)
+                    variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Successful
                 else false
-            ) pageNewsGlobalCurrent.value += 1
+            ) variableData.get<Int>("NewsGlobalPage")!!.value.value!!.plus(1)
 
             refreshNewsGlobalFromServer(
-                pageNewsGlobalCurrent.value,
+                variableData.get<Int>("NewsGlobalPage")!!.value.value!!,
                 !force
             )
         }
@@ -80,7 +75,7 @@ class MainViewModel @Inject constructor(
 
     // Refresh news global
     private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false) {
-        isProcessingData["NewsGlobal"] = ProcessResult.Running
+        variableData.set("NewsGlobal", ProcessResult.Running)
 
         try {
             val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
@@ -106,14 +101,14 @@ class MainViewModel @Inject constructor(
             } else throw Exception("News list empty.")
 
             // Return true
-            isProcessingData["NewsGlobal"] = ProcessResult.Successful
+            variableData.set("NewsGlobal", ProcessResult.Successful)
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
 
             // Return false
-            isProcessingData["NewsGlobal"] = ProcessResult.Failed
+            variableData.set("NewsGlobal", ProcessResult.Failed)
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
@@ -122,25 +117,21 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Get news subjects
-    // Check if is getting news subject
-    private val pageNewSubjectCurrent = mutableStateOf(1)
-
     fun getNewsSubject(force: Boolean) {
         viewModelScope.launch {
             if (force) {
-                pageNewSubjectCurrent.value = 1
-                isProcessingData["NewsSubject"] = ProcessResult.Failed
+                variableData["NewsSubjectPage"] = 1
+                variableData.set("NewsSubject", ProcessResult.Failed)
             }
 
             if (
-                if (isProcessingData["NewsSubject"] != null)
-                    isProcessingData["NewsSubject"]!!.valueProcess.value == ProcessResult.Successful
+                if (variableData.get<ProcessResult>("NewsSubject") != null)
+                    variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Successful
                 else false
-            ) pageNewSubjectCurrent.value += 1
+            ) variableData.get<Int>("NewsSubjectPage")!!.value.value!!.plus(1)
 
             refreshNewsSubjectsFromServer(
-                pageNewSubjectCurrent.value,
+                variableData.get<Int>("NewsSubjectPage")!!.value.value!!,
                 !force
             )
         }
@@ -148,7 +139,7 @@ class MainViewModel @Inject constructor(
 
     // Refresh news subject
     private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false) {
-        isProcessingData["NewsSubject"] = ProcessResult.Running
+        variableData.set("NewsSubject", ProcessResult.Running)
 
         try {
             val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
@@ -174,14 +165,14 @@ class MainViewModel @Inject constructor(
             } else throw Exception("News list empty.")
 
             // Return true
-            isProcessingData["NewsSubject"] = ProcessResult.Successful
+            variableData.set("NewsSubject", ProcessResult.Successful)
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
 
             // Return false
-            isProcessingData["NewsSubject"] = ProcessResult.Failed
+            variableData.set("NewsSubject", ProcessResult.Failed)
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
@@ -190,27 +181,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Settings View.
-    // 0: Settings (and/or not logged in page)
-    // 1: Login page
-    // 2: Logging in page
-    // 3: Account Information page
-    internal val accountPaneIndex = mutableStateOf(0)
-
     // Settings Information
     internal val accCacheData: MutableState<AccountCacheData> = mutableStateOf(
         AccountCacheData()
     )
 
-    // Check if have auto login
-    private val accLoginStartup = mutableStateOf(false)
-
     // Log in using your account
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             // Navigate to page logging in
-            accountPaneIndex.value = 2
-            isProcessingData["LoggingIn"] = ProcessResult.Running
+            variableData["SettingsPanelIndex"] = 2
+            variableData.set("LoggingIn", ProcessResult.Running)
 
             try {
                 // Login
@@ -241,11 +222,11 @@ class MainViewModel @Inject constructor(
             }
 
             // All result will be returned to main page.
-            accountPaneIndex.value = 0
+            variableData["SettingsPanelIndex"] = 0
 
             // If logged in (check session id is not empty)
             if (accCacheData.value.sessionID.value.isNotEmpty()) {
-                isProcessingData["LoggingIn"] = ProcessResult.Successful
+                variableData.set("LoggingIn", ProcessResult.Successful)
                 // Navigate to page logged in
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
@@ -253,18 +234,18 @@ class MainViewModel @Inject constructor(
             }
             // If failed login at startup, will clear all auto login settings
             // and return back to login page
-            else if (accLoginStartup.value) {
-                isProcessingData["LoggingIn"] = ProcessResult.Failed
-                accountPaneIndex.value = 0
+            else if (variableData.get<Boolean>("AccLoginStartup")!!.value.value!!) {
+                variableData.set("LoggingIn", ProcessResult.Failed)
+                variableData["SettingsPanelIndex"] = 0
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
                 )
-                accLoginStartup.value = false
+                variableData["AccLoginStartup"] = false
             }
             // Any failed while logging in will be return to login/not logged in.
             else {
-                isProcessingData["LoggingIn"] = ProcessResult.Failed
-                accountPaneIndex.value = 1
+                variableData.set("LoggingIn", ProcessResult.Failed)
+                variableData["SettingsPanelIndex"] = 1
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
                 )
@@ -283,7 +264,7 @@ class MainViewModel @Inject constructor(
                 accCacheData.value.clearAllData()
 
                 // Navigate to page not logged in
-                accountPaneIndex.value = 0
+                variableData["SettingsPanelIndex"] = 0
 
                 // Logout
                 viewModelScope.launch {
@@ -322,7 +303,7 @@ class MainViewModel @Inject constructor(
     fun refreshSubjectSchedule() {
         viewModelScope.launch {
             try {
-                isProcessingData["SubjectSchedule"] = ProcessResult.Running
+                variableData.set("SubjectSchedule", ProcessResult.Running)
 
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
@@ -344,13 +325,13 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit)
                 }
 
-                isProcessingData["SubjectSchedule"] = ProcessResult.Successful
+                variableData.set("SubjectSchedule", ProcessResult.Successful)
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                isProcessingData["SubjectSchedule"] = ProcessResult.Failed
+                variableData.set("SubjectSchedule", ProcessResult.Failed)
             }
 
             // TODO: Development for current day subjects here!
@@ -361,7 +342,7 @@ class MainViewModel @Inject constructor(
     fun refreshSubjectFee() {
         viewModelScope.launch {
             try {
-                isProcessingData["SubjectFee"] = ProcessResult.Running
+                variableData.set("SubjectFee", ProcessResult.Running)
 
                 // Get subject fee
                 val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
@@ -384,13 +365,13 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money)
                 }
 
-                isProcessingData["SubjectFee"] = ProcessResult.Successful
+                variableData.set("SubjectFee", ProcessResult.Successful)
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                isProcessingData["SubjectFee"] = ProcessResult.Failed
+                variableData.set("SubjectFee", ProcessResult.Failed)
             }
         }
     }
@@ -489,7 +470,7 @@ class MainViewModel @Inject constructor(
     private fun refreshAccountInfo() {
         viewModelScope.launch {
             try {
-                isProcessingData["AccInfo"] = ProcessResult.Running
+                variableData.set("AccInfo", ProcessResult.Running)
 
                 // Get account information
                 val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
@@ -502,13 +483,13 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
                 }
 
-                isProcessingData["AccInfo"] = ProcessResult.Successful
+                variableData.set("AccInfo", ProcessResult.Successful)
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                isProcessingData["AccInfo"] = ProcessResult.Failed
+                variableData.set("AccInfo", ProcessResult.Failed)
             }
         }
     }
@@ -538,7 +519,7 @@ class MainViewModel @Inject constructor(
     // Detect auto login (login if user checked auto login check box)
     fun executeAutoLogin() {
         if (appSettingsRepo.autoLogin) {
-            accLoginStartup.value = true
+            variableData["AccLoginStartup"] = true
             if (appSettingsRepo.username != null && appSettingsRepo.password != null)
                 login(appSettingsRepo.username!!, appSettingsRepo.password!!)
         }
@@ -549,7 +530,28 @@ class MainViewModel @Inject constructor(
 
     }
 
+    private fun initializeVariables() {
+        // Current news global page
+        variableData["NewsGlobalPage"] = 1
+
+        // Current news subject page
+        variableData["NewsSubjectPage"] = 1
+
+        // Check if have auto login
+        variableData["AccLoginStartup"] = false
+
+        // Settings View.
+        // 0: Settings (and/or not logged in page)
+        // 1: Login page
+        // 2: Logging in page
+        // 3: Account Information page
+        variableData["SettingsPanelIndex"] = 0
+    }
+
     init {
+        // Initialize first variables
+        initializeVariables()
+
         // Load settings first before continue.
         loadSettings()
 
