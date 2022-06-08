@@ -27,6 +27,7 @@ fun Settings(mainViewModel: MainViewModel) {
                 mainViewModel.variableData.get<ProcessResult>("AccInfo")!!.value.value == ProcessResult.Running
             else false
             )
+
     when (mainViewModel.variableData.get<Int>("SettingsPanelIndex")!!.value.value!!) {
         0 -> SettingsMain(mainViewModel)
         1 -> AccountPageLogin(

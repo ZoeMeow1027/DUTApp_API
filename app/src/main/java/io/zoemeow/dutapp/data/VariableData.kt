@@ -1,9 +1,12 @@
 package io.zoemeow.dutapp.data
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import io.zoemeow.dutapp.model.VariableItem
 
 class VariableData {
     private val list: ArrayList<VariableItem<Any>> = ArrayList()
+    internal val changedCount: MutableState<Long> = mutableStateOf(0)
 
     operator fun <T: Any> get(key: String): VariableItem<T>? {
         try {
@@ -33,5 +36,6 @@ class VariableData {
         catch (ex: Exception) {
             ex.printStackTrace()
         }
+        changedCount.value += 1
     }
 }

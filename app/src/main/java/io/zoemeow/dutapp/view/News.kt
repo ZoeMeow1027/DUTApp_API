@@ -80,14 +80,12 @@ fun News(mainViewModel: MainViewModel) {
                     }
                 }
                 val isLoadingGlobal = (
-                        if (mainViewModel.variableData.get<ProcessResult>("NewsGlobal") != null)
-                            mainViewModel.variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Running
-                        else false
+                        try { mainViewModel.variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Running }
+                        catch (_: Exception) { false }
                         )
                 val isLoadingSubject = (
-                        if (mainViewModel.variableData.get<ProcessResult>("NewsSubject") != null)
-                            mainViewModel.variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Running
-                        else false
+                        try { mainViewModel.variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Running }
+                        catch (_: Exception) { false }
                         )
 
                 HorizontalPager(count = tabTitles.size, state = pagerState) { index ->

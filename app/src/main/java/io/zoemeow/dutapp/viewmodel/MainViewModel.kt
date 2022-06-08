@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,6 +26,7 @@ import io.zoemeow.dutapp.utils.getDayOfWeek
 import io.zoemeow.dutapp.utils.getMD5FromString
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.ArrayList
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -209,11 +211,6 @@ class MainViewModel @Inject constructor(
                         appSettingsRepo.username = user
                         appSettingsRepo.password = pass
                     }
-
-                    // Pre-load subject schedule, fee and account information
-                    refreshSubjectSchedule()
-                    refreshSubjectFee()
-                    refreshAccountInfo()
                 }
             }
             // Any exception will be here!
@@ -227,6 +224,10 @@ class MainViewModel @Inject constructor(
             // If logged in (check session id is not empty)
             if (accCacheData.value.sessionID.value.isNotEmpty()) {
                 variableData.set("LoggingIn", ProcessResult.Successful)
+                // Pre-load subject schedule, fee and account information
+                refreshSubjectSchedule()
+                refreshSubjectFee()
+                refreshAccountInfo()
                 // Navigate to page logged in
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginsuccessful)!!
@@ -303,7 +304,7 @@ class MainViewModel @Inject constructor(
     fun refreshSubjectSchedule() {
         viewModelScope.launch {
             try {
-                variableData.set("SubjectSchedule", ProcessResult.Running)
+                variableData["SubjectSchedule"] = ProcessResult.Running
 
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
@@ -315,27 +316,29 @@ class MainViewModel @Inject constructor(
 
                 if (dataSubjectScheduleFromInternet.schedule_list != null &&
                         dataSubjectScheduleFromInternet.schedule_list.size > 0) {
-                    // Add to cache
-                    accCacheData.value.subjectScheduleData = dataSubjectScheduleFromInternet.schedule_list
-                    accCacheData.value.subjectCredit = dataSubjectScheduleFromInternet.total_credit!!
-
                     // Write to json
                     accCacheFileRepo.setSubjectSchedule(dataSubjectScheduleFromInternet.schedule_list)
                     accCacheFileRepo.subjectScheduleUpdateTime = dataSubjectScheduleFromInternet.date!!
-                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit)
+                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit!!)
+
+                    // Add to cache
+                    accCacheData.value.subjectScheduleData.clear()
+                    accCacheData.value.subjectScheduleData.addAll(dataSubjectScheduleFromInternet.schedule_list)
+                    accCacheData.value.subjectCredit = dataSubjectScheduleFromInternet.total_credit
                 }
 
-                variableData.set("SubjectSchedule", ProcessResult.Successful)
+                variableData["SubjectSchedule"] = ProcessResult.Successful
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                variableData.set("SubjectSchedule", ProcessResult.Failed)
+                variableData["SubjectSchedule"] = ProcessResult.Failed
             }
 
             // TODO: Development for current day subjects here!
             getSubjectScheduleOnTodayAndTomorrow()
+            getSubjectExaminationOnDays()
         }
     }
 
@@ -353,16 +356,17 @@ class MainViewModel @Inject constructor(
                 )
                 if (dataSubjectFeeFromInternet.fee_list != null &&
                     dataSubjectFeeFromInternet.fee_list.size > 0) {
-                    // Add to cache
-                    accCacheData.value.subjectFeeData = dataSubjectFeeFromInternet.fee_list
-                    accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit!!
-                    accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money!!
-
                     // Write to json
                     accCacheFileRepo.setSubjectFee(dataSubjectFeeFromInternet.fee_list)
                     accCacheFileRepo.subjectFeeUpdateTime = dataSubjectFeeFromInternet.date!!
-                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectFeeFromInternet.total_credit)
-                    accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money)
+                    accCacheFileRepo.setSubjectCreditTotal(dataSubjectFeeFromInternet.total_credit!!)
+                    accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money!!)
+
+                    // Add to cache
+                    accCacheData.value.subjectFeeData.clear()
+                    accCacheData.value.subjectFeeData.addAll(dataSubjectFeeFromInternet.fee_list)
+                    accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit
+                    accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money
                 }
 
                 variableData.set("SubjectFee", ProcessResult.Successful)
@@ -376,13 +380,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    internal val subjectScheduleToday: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
-        ArrayList()
-    )
+    internal val subjectScheduleToday = mutableStateListOf<SubjectScheduleItem>()
 
-    internal val subjectScheduleTomorrow: MutableState<ArrayList<SubjectScheduleItem>> = mutableStateOf(
-        ArrayList()
-    )
+    internal val subjectScheduleTomorrow = mutableStateListOf<SubjectScheduleItem>()
 
     private fun getSubjectScheduleInDayOfWeek(
         plusDayOfWeek: Int = 0,
@@ -422,6 +422,7 @@ class MainViewModel @Inject constructor(
                     }
             )
         } catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
         }
 
@@ -429,11 +430,36 @@ class MainViewModel @Inject constructor(
         return result
     }
 
+    internal val subjectExam7Days = mutableStateListOf<SubjectScheduleItem>()
+
+    fun getSubjectExaminationOnDays(dayNext: Int = 7, hideAfterMin: Int = 60) {
+        try {
+            val timeUnix = System.currentTimeMillis()
+            subjectExam7Days.clear()
+            subjectExam7Days.addAll(
+                accCacheData.value.subjectScheduleData
+                    // Filter time between 7 days
+                    .filter {
+                        (it.schedule_exam!!.date - timeUnix > 0) &&
+                                (it.schedule_exam.date - timeUnix < (1000*60*60*24*dayNext + 1000*60*hideAfterMin))
+                    }
+                    // Sort subjects by lesson start
+                    .sortedBy {
+                        it.schedule_exam?.date
+                    }
+            )
+        }
+        catch (ex: Exception) {
+            exceptionCacheData.value.addException(ex)
+            ex.printStackTrace()
+        }
+    }
+
     fun getSubjectScheduleOnTodayAndTomorrow() {
         // Current subject schedule today
         try {
-            subjectScheduleToday.value.clear()
-            subjectScheduleToday.value.addAll(
+            subjectScheduleToday.clear()
+            subjectScheduleToday.addAll(
                 getSubjectScheduleInDayOfWeek(0, 0)
             )
         }
@@ -444,8 +470,8 @@ class MainViewModel @Inject constructor(
 
         // Current subject schedule tomorrow
         try {
-            subjectScheduleTomorrow.value.clear()
-            subjectScheduleTomorrow.value.addAll(
+            subjectScheduleTomorrow.clear()
+            subjectScheduleTomorrow.addAll(
                 getSubjectScheduleInDayOfWeek(1, 0)
             )
         }
@@ -558,6 +584,7 @@ class MainViewModel @Inject constructor(
         // Load news cache for backup if internet is not available.
         loadAppCache()
         getSubjectScheduleOnTodayAndTomorrow()
+        getSubjectExaminationOnDays()
 
         // Auto refresh news in server at startup.
         // refreshNewsGlobalFromServer()
