@@ -39,13 +39,14 @@ fun News(mainViewModel: MainViewModel) {
             topBar = { },
             floatingActionButton = {
                 FloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.primary,
                     onClick = {
                         // TODO: Search in news global and news subject here!
                     },
                     content = {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_search_24),
-                            contentDescription = "Search"
+                            contentDescription = "Search",
                         )
                     }
                 )
