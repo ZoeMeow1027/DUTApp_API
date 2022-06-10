@@ -34,13 +34,14 @@ import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.navbar.NavBarItemObject
 import io.zoemeow.dutapp.navbar.NavRoutes
 import io.zoemeow.dutapp.ui.theme.MyApplicationTheme
+import io.zoemeow.dutapp.utils.getCurrentUnixTime
 import io.zoemeow.dutapp.view.*
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    var mainViewModel: MainViewModel? = null
+    private var mainViewModel: MainViewModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,12 +61,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        mainViewModel?.reloadViewSubjectScheduleOnDay()
+
+        if (getCurrentUnixTime() - (mainViewModel?.accCacheData?.value?.subjectGetTime ?: 0) > 5*60*1000) {
+            mainViewModel?.reloadViewSubjectScheduleOnDay()
+        }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalComposeUiApi::class, ExperimentalPagerApi::class
+@OptIn(
+    ExperimentalMaterialApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalComposeUiApi::class,
+    ExperimentalPagerApi::class
 )
 @Composable
 fun MainScreen(mainViewModel: MainViewModel) {
@@ -128,9 +135,11 @@ fun MainScreen(mainViewModel: MainViewModel) {
     }
 }
 
-@ExperimentalComposeUiApi
-@ExperimentalPagerApi
-@ExperimentalMaterial3Api
+@OptIn(
+    ExperimentalComposeUiApi::class,
+    ExperimentalPagerApi::class,
+    ExperimentalMaterial3Api::class,
+)
 @Composable
 fun NavigationHost(
     navController: NavHostController,

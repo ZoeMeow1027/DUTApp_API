@@ -2,31 +2,60 @@ package io.zoemeow.dutapp.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
+import io.zoemeow.dutapp.ui.customs.HomePanel_Loading_State
+import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Box
+import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Column
+import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Header
+import io.zoemeow.dutapp.utils.dateTimeToString
 import io.zoemeow.dutapp.utils.getCurrentLesson
+import io.zoemeow.dutapp.utils.getCurrentUnixTime
 import io.zoemeow.dutapp.viewmodel.MainViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun Home(mainViewModel: MainViewModel) {
-    val isLoadingSubject = remember { mutableStateOf(false) }
+    val isLoggedIn = remember { mutableStateOf(false) }
+    isLoggedIn.value = mainViewModel.accCacheData.value.sessionID.value.isNotEmpty()
+
+    val isLoggingIn = remember { mutableStateOf(false) }
+    LaunchedEffect(mainViewModel.variableData.changedCount.value) {
+        isLoggingIn.value = (
+                try { mainViewModel.variableData.get<ProcessResult>("LoggingIn")!!.value.value == ProcessResult.Running }
+                catch (_: Exception) { false }
+                )
+    }
+
     val optionsScrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(top = 10.dp, bottom = 10.dp, start = 20.dp, end = 20.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(optionsScrollState)
+    ) {
+        if (isLoggedIn.value) {
+            HomePanelLoggedIn(mainViewModel)
+        }
+        else {
+            HomePageNotLoggedIn(isLoggingIn.value)
+        }
+    }
+}
+
+@Composable
+fun HomePanelLoggedIn(mainViewModel: MainViewModel) {
+    val isLoadingSubject = remember { mutableStateOf(false) }
 
     LaunchedEffect(mainViewModel.variableData.changedCount.value) {
         isLoadingSubject.value = (
@@ -35,31 +64,22 @@ fun Home(mainViewModel: MainViewModel) {
                 )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(10.dp)
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(optionsScrollState)
-    ) {
-        // Examination in next 7 days
-        HomePanelExamination(
-            isLoadingSubject,
-            mainViewModel.subjectExam7Days
-        )
-        // Today lesson
-        HomePanelToday(
-            isLoadingSubject,
-            getCurrentLesson(),
-            mainViewModel.subjectScheduleToday
-        )
-        // Tomorrow lesson
-        HomePanelTomorrow(
-            isLoadingSubject,
-            mainViewModel.subjectScheduleTomorrow
-        )
-    }
+    // Examination in next 7 days
+    HomePanelExamination(
+        isLoadingSubject,
+        mainViewModel.subjectExam7Days
+    )
+    // Today lesson
+    HomePanelToday(
+        isLoadingSubject,
+        getCurrentLesson(),
+        mainViewModel.subjectScheduleToday
+    )
+    // Tomorrow lesson
+    HomePanelTomorrow(
+        isLoadingSubject,
+        mainViewModel.subjectScheduleTomorrow
+    )
 }
 
 @Composable
@@ -67,49 +87,27 @@ fun HomePanelExamination(
     isLoadingSubject: MutableState<Boolean>,
     subjectExamInDays: SnapshotStateList<SubjectScheduleItem>
 ) {
-    Spacer(modifier = Modifier.size(10.dp))
-    Text(
-        text = "Your examination",
-        style = MaterialTheme.typography.headlineLarge,
+    HomePanel_Subject_Header(
+        title = "Your examination",
+        description = "Your subject examination in next 7 days"
     )
-    Spacer(modifier = Modifier.size(5.dp))
-    Text(
-        text = "Your subject examination in next 7 days",
-        style = MaterialTheme.typography.bodyLarge
-    )
-    Spacer(modifier = Modifier.size(10.dp))
     if (!isLoadingSubject.value) {
         for (item in subjectExamInDays) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(top = 5.dp, bottom = 5.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                ) {
+            HomePanel_Subject_Box {
+                HomePanel_Subject_Column {
                     Text(
                         text = item.name.toString(),
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = getDateString(item.schedule_exam!!.date, "dd/MM/yyyy HH:mm", "GMT+7"),
+                        text = "${dateTimeToString(item.schedule_exam!!.date - getCurrentUnixTime())} (${getDateString(item.schedule_exam.date, "dd/MM/yyyy HH:mm", "GMT+7")})",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
             }
         }
     }
-    else {
-        HomeNewScheduleLoading()
-    }
+    else HomePanelNewScheduleLoading()
 }
 
 @Composable
@@ -118,46 +116,27 @@ fun HomePanelToday(
     currentLesson: Int,
     subjectScheduleToday: SnapshotStateList<SubjectScheduleItem>
 ) {
-    Spacer(modifier = Modifier.size(20.dp))
-    Text(
-        text = "Your today lessons",
-        style = MaterialTheme.typography.headlineLarge,
-    )
-    Spacer(modifier = Modifier.size(5.dp))
-    Text(
-        text = (
+    HomePanel_Subject_Header(
+        title = "Your today lessons",
+        description = (
                 if (currentLesson <= 0)
                     "Good morning! Your lessons are ready..."
                 else if (currentLesson > 14)
                     "Your today lessons are over! Happy tonight!"
                 else
-                    "Current lesson: ${getCurrentLesson()}"
-                ),
-        style = MaterialTheme.typography.bodyLarge
+                    "Current lesson: %s%s".format(
+                        getCurrentLesson(),
+                        if (subjectScheduleToday.size == 0)
+                            ", but you're reached all lessons today! Enjoy your day!"
+                        else ""
+                    )
+                )
     )
-    Spacer(modifier = Modifier.size(10.dp))
     // Current lesson, if done loading
     if (!isLoadingSubject.value) {
         for (item in subjectScheduleToday) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(top = 5.dp, bottom = 5.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                ) {
-                    Text(
-                        text = item.name.toString(),
-                        style = MaterialTheme.typography.titleMedium
-                    )
+            HomePanel_Subject_Box {
+                HomePanel_Subject_Column {
                     val temp = item.schedule_study?.schedule?.filter {
                         it.lesson?.end!! >= currentLesson
                     }
@@ -168,6 +147,10 @@ fun HomePanelToday(
                         str += "Lesson ${item1.lesson?.start} -> ${item1.lesson?.end} "
                     }
                     Text(
+                        text = item.name.toString(),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
                         text = str,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -175,9 +158,7 @@ fun HomePanelToday(
             }
         }
     }
-    else {
-        HomeNewScheduleLoading()
-    }
+    else HomePanelNewScheduleLoading()
 }
 
 @Composable
@@ -185,39 +166,20 @@ fun HomePanelTomorrow(
     isLoadingSubject: MutableState<Boolean>,
     subjectScheduleTomorrow: SnapshotStateList<SubjectScheduleItem>
 ) {
-    Spacer(modifier = Modifier.size(20.dp))
-    Text(
-        text = "Tomorrow lesson",
-        style = MaterialTheme.typography.headlineLarge,
+    HomePanel_Subject_Header(
+        title = "Tomorrow lesson",
+        description = (
+                if (subjectScheduleTomorrow.size == 0)
+                    "No lessons! It can be no lessons in tomorrow, or your lessons week has ended."
+                else "Below is lesson what is beginning learned by you tomorrow."
+                )
     )
-    Spacer(modifier = Modifier.size(5.dp))
-    Text(
-        text = "Below is lesson what is beginning learned by you tomorrow.",
-        style = MaterialTheme.typography.bodyLarge
-    )
-    Spacer(modifier = Modifier.size(10.dp))
     // Tomorrow lesson
     if (!isLoadingSubject.value) {
         for (item in subjectScheduleTomorrow) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(top = 5.dp, bottom = 5.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                ) {
-                    Text(
-                        text = item.name.toString(),
-                        style = MaterialTheme.typography.titleMedium
-                    )
+            HomePanel_Subject_Box {
+                HomePanel_Subject_Column {
+                    // Find and join all lessons
                     val temp = item.schedule_study?.schedule
                     var str = ""
                     for (item1 in temp!!) {
@@ -225,6 +187,12 @@ fun HomePanelTomorrow(
                             str += "; "
                         str += "Lesson ${item1.lesson?.start} -> ${item1.lesson?.end} "
                     }
+                    // Lesson name
+                    Text(
+                        text = item.name.toString(),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    // Lesson in str
                     Text(
                         text = str,
                         style = MaterialTheme.typography.bodyLarge
@@ -233,33 +201,23 @@ fun HomePanelTomorrow(
             }
         }
     }
-    else {
-        HomeNewScheduleLoading()
-    }
+    else HomePanelNewScheduleLoading()
 }
 
 @Composable
-fun HomeNewScheduleLoading() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentSize()
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Spacer(modifier = Modifier.size(10.dp))
-            Text("Loading your new schedule")
-            Text("Please wait...")
-            Spacer(modifier = Modifier.size(5.dp))
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.size(10.dp))
-        }
-    }
+fun HomePageNotLoggedIn(loggingIn: Boolean) {
+    HomePanel_Loading_State(
+        isLoading = loggingIn,
+        title = if (!loggingIn) "You are not logged in!" else "Logging you in...",
+        description = "Your subject schedule will show here after you logged in."
+    )
+}
+
+@Composable
+fun HomePanelNewScheduleLoading() {
+    HomePanel_Loading_State(
+        isLoading = true,
+        title = "Loading your new schedule",
+        description = "Please wait..."
+    )
 }

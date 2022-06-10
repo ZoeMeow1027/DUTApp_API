@@ -66,7 +66,7 @@ class MainViewModel @Inject constructor(
                 if (variableData.get<ProcessResult>("NewsGlobal") != null)
                     variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Successful
                 else false
-            ) variableData.get<Int>("NewsGlobalPage")!!.value.value!!.plus(1)
+            ) variableData["NewsGlobalPage"] = variableData.get<Int>("NewsGlobalPage")!!.value.value!!.plus(1)
 
             refreshNewsGlobalFromServer(
                 variableData.get<Int>("NewsGlobalPage")!!.value.value!!,
@@ -130,7 +130,7 @@ class MainViewModel @Inject constructor(
                 if (variableData.get<ProcessResult>("NewsSubject") != null)
                     variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Successful
                 else false
-            ) variableData.get<Int>("NewsSubjectPage")!!.value.value!!.plus(1)
+            ) variableData["NewsSubjectPage"] = variableData.get<Int>("NewsSubjectPage")!!.value.value!!.plus(1)
 
             refreshNewsSubjectsFromServer(
                 variableData.get<Int>("NewsSubjectPage")!!.value.value!!,
@@ -328,6 +328,7 @@ class MainViewModel @Inject constructor(
                 }
 
                 variableData["SubjectSchedule"] = ProcessResult.Successful
+                accCacheData.value.subjectGetTime = dataSubjectScheduleFromInternet.date!!
             }
             // Any exception will be here!
             catch (ex: Exception) {
@@ -368,8 +369,8 @@ class MainViewModel @Inject constructor(
                     accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit
                     accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money
                 }
-
-                variableData.set("SubjectFee", ProcessResult.Successful)
+                accCacheData.value.subjectGetTime = dataSubjectFeeFromInternet.date!!
+                variableData["SubjectFee"] = ProcessResult.Successful
             }
             // Any exception will be here!
             catch (ex: Exception) {

@@ -12,8 +12,8 @@ android {
         applicationId "io.zoemeow.dutapp"
         minSdk 21
         targetSdk 32
-        versionCode 4
-        versionName "0.7.alpha"
+        versionCode 6
+        versionName '0.8.alpha'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -73,15 +73,15 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 
     // Dagger Hilt
-    implementation "com.google.dagger:hilt-android:2.40.1"
-    kapt "com.google.dagger:hilt-compiler:2.40.1"
+    implementation 'com.google.dagger:hilt-android:2.42'
+    kapt 'com.google.dagger:hilt-compiler:2.42'
 
     // Accompanist - Pull-to-refresh
-    implementation "com.google.accompanist:accompanist-swiperefresh:0.24.8-beta"
+    implementation 'com.google.accompanist:accompanist-swiperefresh:0.24.10-beta'
 
     // Accompanist - Pager
-    implementation "com.google.accompanist:accompanist-pager:0.24.8-beta"
-    implementation "com.google.accompanist:accompanist-pager-indicators:0.24.8-beta"
+    implementation 'com.google.accompanist:accompanist-pager:0.24.10-beta'
+    implementation 'com.google.accompanist:accompanist-pager-indicators:0.24.10-beta'
 
     implementation 'com.google.android.material:material:1.6.1'
 }

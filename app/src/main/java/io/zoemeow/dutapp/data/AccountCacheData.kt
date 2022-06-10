@@ -14,6 +14,7 @@ class AccountCacheData {
     private var dataSubjectFee: ArrayList<SubjectFeeItem> = ArrayList()
     private var subjectCreditTotal: Int = 0
     private var subjectMoneyTotal: Long = 0
+    private var getTime: Long = 0
 
     @Transient
     private var sessionIDPri: MutableState<String> = mutableStateOf(String())
@@ -49,6 +50,10 @@ class AccountCacheData {
     var accountInformationData: MutableState<AccountInformationItem>
         get() = dataInfo
         set(value) { dataInfo.value = value.value }
+
+    var subjectGetTime: Long
+        get() = getTime
+        set(value) { getTime = value }
 
     fun clearAllData() {
         dataInfo.value = AccountInformationItem()
