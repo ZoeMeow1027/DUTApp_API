@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.model.account.AccountInformationItem
+import io.zoemeow.dutapp.ui.customs.LoadingFullScreen
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,34 +125,15 @@ fun AccountPageLogin(
 }
 
 @Composable
-fun AccountPageLoggingIn() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Please wait",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(modifier = Modifier.size(5.dp))
-            Text(
-                text = "Logging you in...",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.size(15.dp))
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 90.dp, end = 90.dp)
-            )
-        }
-    }
-}
-
-@Composable
 fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean) {
-    if (isLoading) AccountPageLoadingYourInfo()
+    if (isLoading) {
+        LoadingFullScreen(
+            title = "Please wait",
+            contentList = arrayListOf(
+                "Loading your information..."
+            )
+        )
+    }
     else {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -213,32 +195,6 @@ fun AccountPageInformation(accInfo: AccountInformationItem, isLoading: Boolean) 
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun AccountPageLoadingYourInfo() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Please wait",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(modifier = Modifier.size(5.dp))
-            Text(
-                text = "Loading your information...",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.size(15.dp))
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 90.dp, end = 90.dp)
-            )
         }
     }
 }

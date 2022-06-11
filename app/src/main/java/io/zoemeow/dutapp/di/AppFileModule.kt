@@ -24,17 +24,17 @@ object AppFileModule {
 
     @Provides
     @Singleton
-    fun provideAppSettingsRepository(@ApplicationContext context: Context): AppSettingsFileRepository {
-        val filePath = "${context.filesDir.path}/appSettings.json"
-        val file = File(filePath)
-        return AppSettingsFileRepository(file)
-    }
-
-    @Provides
-    @Singleton
     fun provideSubjectCacheRepository(@ApplicationContext context: Context): SubjectCacheFileRepository {
         val filePath = "${context.cacheDir.path}/subjectCache.json"
         val file = File(filePath)
         return SubjectCacheFileRepository(file)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppSettings2Repository(@ApplicationContext context: Context): AppSettingsFileRepository {
+        val filePath = "${context.filesDir.path}/appSettings2.json"
+        val file = File(filePath)
+        return AppSettingsFileRepository(file)
     }
 }

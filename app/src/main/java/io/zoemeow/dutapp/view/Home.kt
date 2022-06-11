@@ -3,13 +3,12 @@ package io.zoemeow.dutapp.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
@@ -17,6 +16,7 @@ import io.zoemeow.dutapp.ui.customs.HomePanel_Loading_State
 import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Box
 import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Column
 import io.zoemeow.dutapp.ui.customs.HomePanel_Subject_Header
+import io.zoemeow.dutapp.utils.DateToString
 import io.zoemeow.dutapp.utils.dateTimeToString
 import io.zoemeow.dutapp.utils.getCurrentLesson
 import io.zoemeow.dutapp.utils.getCurrentUnixTime
@@ -25,12 +25,12 @@ import io.zoemeow.dutapp.viewmodel.MainViewModel
 @Composable
 fun Home(mainViewModel: MainViewModel) {
     val isLoggedIn = remember { mutableStateOf(false) }
-    isLoggedIn.value = mainViewModel.accCacheData.value.sessionID.value.isNotEmpty()
+    isLoggedIn.value = mainViewModel.isAvailableOffline()
 
     val isLoggingIn = remember { mutableStateOf(false) }
-    LaunchedEffect(mainViewModel.variableData.changedCount.value) {
+    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
         isLoggingIn.value = (
-                try { mainViewModel.variableData.get<ProcessResult>("LoggingIn")!!.value.value == ProcessResult.Running }
+                try { mainViewModel.tempVarData["LoggingIn"].value!!.toInt() == ProcessResult.Running.result }
                 catch (_: Exception) { false }
                 )
     }
@@ -57,9 +57,12 @@ fun Home(mainViewModel: MainViewModel) {
 fun HomePanelLoggedIn(mainViewModel: MainViewModel) {
     val isLoadingSubject = remember { mutableStateOf(false) }
 
-    LaunchedEffect(mainViewModel.variableData.changedCount.value) {
+    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
         isLoadingSubject.value = (
-                try { mainViewModel.variableData.get<ProcessResult>("SubjectSchedule")!!.value.value == ProcessResult.Running }
+                try {
+                    mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() ==
+                            ProcessResult.Running.result
+                }
                 catch (_: Exception) { false }
                 )
     }
@@ -100,7 +103,7 @@ fun HomePanelExamination(
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = "${dateTimeToString(item.schedule_exam!!.date - getCurrentUnixTime())} (${getDateString(item.schedule_exam.date, "dd/MM/yyyy HH:mm", "GMT+7")})",
+                        text = "${dateTimeToString(item.schedule_exam!!.date - getCurrentUnixTime())} (${DateToString(item.schedule_exam.date, "dd/MM/yyyy HH:mm", "GMT+7")})",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -108,6 +111,7 @@ fun HomePanelExamination(
         }
     }
     else HomePanelNewScheduleLoading()
+    Spacer(modifier = Modifier.size(10.dp))
 }
 
 @Composable
@@ -159,6 +163,7 @@ fun HomePanelToday(
         }
     }
     else HomePanelNewScheduleLoading()
+    Spacer(modifier = Modifier.size(10.dp))
 }
 
 @Composable
@@ -202,6 +207,7 @@ fun HomePanelTomorrow(
         }
     }
     else HomePanelNewScheduleLoading()
+    Spacer(modifier = Modifier.size(10.dp))
 }
 
 @Composable

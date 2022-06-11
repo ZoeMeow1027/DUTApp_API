@@ -1,34 +1,25 @@
 package io.zoemeow.dutapp.view
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import io.zoemeow.dutapp.R
 import io.zoemeow.dutapp.data.NewsCacheData
 import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
+import io.zoemeow.dutapp.ui.customs.NewsPanel_NewsDetailsItem
+import io.zoemeow.dutapp.ui.customs.NewsPanel_NewsItem
+import io.zoemeow.dutapp.utils.DateToString
+import io.zoemeow.dutapp.utils.LazyList_EndOfListHandler
 
 @Composable
 fun NewsSubjectViewHost(
@@ -40,6 +31,13 @@ fun NewsSubjectViewHost(
     val swipeRefreshState = rememberSwipeRefreshState(true)
     val lazyColumnState = rememberLazyListState()
     swipeRefreshState.isRefreshing = isLoading
+
+    LazyList_EndOfListHandler(
+        listState = lazyColumnState,
+        onLoadMore = {
+            getDataRequested(false)
+        }
+    )
 
     SwipeRefresh(
         state = swipeRefreshState,
@@ -56,60 +54,15 @@ fun NewsSubjectViewHost(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
         ) {
-            items(data.value.newsSubjectData.value) { item ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 5.dp, bottom = 5.dp)
-                        // https://www.android--code.com/2021/09/jetpack-compose-box-rounded-corners_25.html
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .clickable { newsDetailsClickedData.value?.setViewDetailsNewsSubject(item) },
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 10.dp)
-                    ) {
-                        Text(
-                            text = item.title!!,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(modifier = Modifier.size(5.dp))
-                        Text(
-                            text = item.content!!,
-                            style = MaterialTheme.typography.bodyMedium,
-                            // https://stackoverflow.com/a/65736376
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(modifier = Modifier.size(20.dp))
-                        // https://stackoverflow.com/questions/2891361/how-to-set-time-zone-of-a-java-util-date
-                        Text(
-                            text = getDateString(item.date!!, "dd/MM/yyyy"),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    content = {
-                        Spacer(modifier = Modifier.size(15.dp))
-                        if (isLoading) { }
-                    }
+            items(data.value.newsSubjectData) { item ->
+                NewsPanel_NewsItem(
+                    date = DateToString(item.date!!, "dd/MM/yyyy"),
+                    title = item.title!!,
+                    summary = item.content!!,
+                    clickable = { newsDetailsClickedData.value?.setViewDetailsNewsSubject(item) }
                 )
             }
         }
-
-        InfiniteListHandler(
-            listState = lazyColumnState,
-            onLoadMore = {
-                getDataRequested(false)
-            }
-        )
     }
 }
 
@@ -118,74 +71,11 @@ fun NewsSubjectDetails(
     newsSubjectItem: NewsSubjectItem,
     linkClicked: (String) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .padding(20.dp)
-            .background(MaterialTheme.colorScheme.onSecondary)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top,
-        ) {
-            Text(
-                text = "${newsSubjectItem.title}",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.size(5.dp))
-            Text(
-                text = "Posted on ${ getDateString(newsSubjectItem.date ?: 0, "dd/MM/yyyy") }",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.size(15.dp))
-            val annotatedString = buildAnnotatedString {
-                if (newsSubjectItem.content != null) {
-                    // Parse all string to annotated string.
-                    append(newsSubjectItem.content!!)
-                    // Adjust color for annotated string to follow system mode.
-                    addStyle(
-                        style = SpanStyle(color = if (isSystemInDarkTheme()) Color.White else Color.Black),
-                        start = 0,
-                        end = newsSubjectItem.content!!.length
-                    )
-                    // Adjust for detected link.
-                    newsSubjectItem.links?.forEach {
-                        addStringAnnotation(
-                            tag = it.position!!.toString(),
-                            annotation = it.url!!,
-                            start = it.position,
-                            end = it.position + it.text!!.length
-                        )
-                        addStyle(
-                            style = SpanStyle(color = Color(0xff64B5F6)),
-                            start = it.position,
-                            end = it.position + it.text.length
-                        )
-                    }
-                }
-            }
-            ClickableText(
-                text = annotatedString,
-                style = MaterialTheme.typography.bodyMedium,
-                onClick = {
-                    try {
-                        newsSubjectItem.links?.forEach {
-                                item ->
-                            annotatedString
-                                .getStringAnnotations(item.position!!.toString(), it, it)
-                                .firstOrNull()
-                                ?.let { url -> linkClicked(url.item.lowercase()) }
-                        }
-                    } catch (_: Exception) {
-                        // TODO: Exception for can't open link here!
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.size(20.dp))
-            Text(
-                text = stringResource(id = R.string.newsdetails_swipeorclickabovetoexit),
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+    NewsPanel_NewsDetailsItem(
+        title = newsSubjectItem.title,
+        date = DateToString(newsSubjectItem.date ?: 0, "dd/MM/yyyy"),
+        content = newsSubjectItem.content,
+        links = newsSubjectItem.links,
+        linkClicked = { linkClicked(it) }
+    )
 }

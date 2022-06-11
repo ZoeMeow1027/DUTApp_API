@@ -73,12 +73,20 @@ fun HomePanel_Loading_State(
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
-        HomePanel_Subject_Column {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(10.dp),
+        ) {
             Spacer(modifier = Modifier.size(10.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge
             )
+            Spacer(modifier = Modifier.size(5.dp))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyLarge

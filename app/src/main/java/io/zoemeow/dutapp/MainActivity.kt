@@ -173,11 +173,11 @@ fun NavigationHost(
         composable(NavRoutes.Settings.route) {
             // If still in Login, roll back to Not Logged In, else will return to main screen.
             BackHandler(
-                enabled = (mainViewModel.variableData.get<Int>("SettingsPanelIndex")!!.value.value!! != 0),
+                enabled = (mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() != 0),
                 onBack = {
                     // If in page logging, prevent back
-                    if (mainViewModel.variableData.get<Int>("SettingsPanelIndex")!!.value.value!! != 2)
-                        mainViewModel.variableData["SettingsPanelIndex"] = 0
+                    if (mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() != 2)
+                        mainViewModel.tempVarData["SettingsPanelIndex"] = "0"
                 }
             )
             Settings(mainViewModel = mainViewModel)

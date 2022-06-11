@@ -1,40 +1,50 @@
 package io.zoemeow.dutapp.view
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import io.zoemeow.dutapp.BuildConfig
 import io.zoemeow.dutapp.model.enums.ProcessResult
-import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
+import io.zoemeow.dutapp.ui.customs.LoadingFullScreen
+import io.zoemeow.dutapp.ui.customs.SettingsPanel_Divider
+import io.zoemeow.dutapp.ui.customs.SettingsPanel_LayoutOptionItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
 fun Settings(mainViewModel: MainViewModel) {
     val isLoadingInfo = (
-            if (mainViewModel.variableData.get<ProcessResult>("AccInfo") != null)
-                mainViewModel.variableData.get<ProcessResult>("AccInfo")!!.value.value == ProcessResult.Running
+            if (mainViewModel.tempVarData["AccInfo"].value != null)
+                mainViewModel.tempVarData["AccInfo"].value!!.toInt() == ProcessResult.Running.result
             else false
             )
 
-    when (mainViewModel.variableData.get<Int>("SettingsPanelIndex")!!.value.value!!) {
+    val currentPage = remember { mutableStateOf(0) }
+    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
+        currentPage.value = (
+                try { mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() }
+                catch (_: Exception) { 0 }
+                )
+    }
+
+    when (currentPage.value) {
         0 -> SettingsMain(mainViewModel)
         1 -> AccountPageLogin(
             mainViewModel = mainViewModel,
-            backRequest = { mainViewModel.variableData["SettingsPanelIndex"] = 0 }
+            backRequest = { mainViewModel.tempVarData["SettingsPanelIndex"] = "0" }
         )
-        2 -> AccountPageLoggingIn()
+        2 -> LoadingFullScreen(
+            title = "Please wait",
+            contentList = arrayListOf(
+                "Logging you in..."
+            )
+        )
         3 -> AccountPageInformation(
             accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
             isLoading = isLoadingInfo,
@@ -60,13 +70,13 @@ fun SettingsMain(mainViewModel: MainViewModel) {
             mainViewModel,
             toggleLogout = { dialogLogoutEnabled.value = true }
         )
-        SettingsOptionDivider()
+        SettingsPanel_Divider()
         SettingsOptionSubject(
             mainViewModel.subjectSchoolYearSettings
         )
-        SettingsOptionDivider()
+        SettingsPanel_Divider()
         SettingsOptionAppSettings()
-        SettingsOptionDivider()
+        SettingsPanel_Divider()
         SettingsOptionAppInfo(
             linkClicked = { mainViewModel.openLinkInBrowser(it) }
         )
@@ -130,31 +140,31 @@ fun SettingsOptionAccount(
         if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() &&
             !mainViewModel.isAvailableOffline()) {
             // Login
-            SettingsOptionLayout(
+            SettingsPanel_LayoutOptionItem(
                 textAbove = "Login",
                 textBelow = "To use more app features, you need to sign in.",
-                clickable = { mainViewModel.variableData["SettingsPanelIndex"] = 1 }
+                clickable = { mainViewModel.tempVarData["SettingsPanelIndex"] = "1" }
             )
         }
         // If logged in/offline mode and logged in previously.
         else {
             Column {
                 // Account Information
-                SettingsOptionLayout(
+                SettingsPanel_LayoutOptionItem(
                     textAbove = "View Account Information",
                     textBelow = "View your information which is saved in sv.dut.udn.vn",
-                    clickable = { mainViewModel.variableData["SettingsPanelIndex"] = 3 }
+                    clickable = { mainViewModel.tempVarData["SettingsPanelIndex"] = "3" }
                 )
                 // Re-login
                 if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
-                    SettingsOptionLayout(
+                    SettingsPanel_LayoutOptionItem(
                         textAbove = "Re-login",
                         textBelow = "You have saved your login, but you haven't been logged in to system. Click here to re-login.",
                         clickable = { mainViewModel.executeAutoLogin() }
                     )
                 }
                 // Logout
-                SettingsOptionLayout(
+                SettingsPanel_LayoutOptionItem(
                     textAbove = "Logout",
                     textBelow = "Logged in as ${mainViewModel.accCacheData.value.accountInformationData.value.studentId}",
                     clickable = { toggleLogout() }
@@ -166,14 +176,14 @@ fun SettingsOptionAccount(
 
 @Composable
 fun SettingsOptionSubject(
-    schoolYearSettings: SubjectSchoolYearSettings,
+    schoolYearSettings: ArrayList<Int>,
 ) {
     Column {
         SettingsOptionTitle(text = "Subject")
         // Setting for School year.
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "Set school year (Currently disabled)",
-            textBelow = "Currently: School Year ${schoolYearSettings.subjectYear}, Semester ${schoolYearSettings.subjectSemester}${if (schoolYearSettings.subjectInSummer) " (in summer)" else ""}",
+            textBelow = "Currently: School Year ${schoolYearSettings[0]}, Semester ${schoolYearSettings[1]}${if (schoolYearSettings[2] == 1) " (in summer)" else ""}",
             clickable = { }
         )
     }
@@ -183,12 +193,12 @@ fun SettingsOptionSubject(
 fun SettingsOptionAppSettings() {
     Column {
         SettingsOptionTitle(text = "Settings")
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "App theme",
             textBelow = "Following system theme (This feature are under development. Stay tuned!)",
             clickable = {  }
         )
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "Black backgrounds in dark theme (for AMOLED)",
             textBelow = "No (This feature are under development. Stay tuned!)",
             clickable = {  }
@@ -203,30 +213,22 @@ fun SettingsOptionAppInfo(
 
     Column {
         SettingsOptionTitle(text = "App information")
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "Version",
             textBelow = BuildConfig.VERSION_NAME,
             clickable = { }
         )
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "Changelog",
             textBelow = "(This feature are under development. Stay tuned!)",
             clickable = { }
         )
-        SettingsOptionLayout(
+        SettingsPanel_LayoutOptionItem(
             textAbove = "GitHub (click to open in browser)",
             textBelow = "https://github.com/ZoeMeow5466/DUTApp_API",
             clickable = { linkClicked("https://github.com/ZoeMeow5466/DUTApp_API") }
         )
     }
-}
-
-@Composable
-fun SettingsOptionDivider() {
-    Divider(
-        thickness = 1.dp,
-        color = Color.LightGray
-    )
 }
 
 @Composable
@@ -244,34 +246,6 @@ fun SettingsOptionTitle(text: String) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-        }
-    }
-}
-
-@Composable
-fun SettingsOptionLayout(
-    textAbove: String,
-    textBelow: String? = null,
-    clickable: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(75.dp)
-            .clickable { clickable() },
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp)) {
-            Text(
-                text = textAbove,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            if (textBelow != null) {
-                Text(
-                    text = textBelow,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
         }
     }
 }

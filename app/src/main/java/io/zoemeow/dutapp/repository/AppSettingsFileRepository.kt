@@ -1,49 +1,56 @@
 package io.zoemeow.dutapp.repository
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import com.google.gson.Gson
-import io.zoemeow.dutapp.model.AppSettings
-import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
+import com.google.gson.reflect.TypeToken
+import io.zoemeow.dutapp.model.VariableItem
 import java.io.BufferedReader
 import java.io.File
 import javax.inject.Inject
 
-class AppSettingsFileRepository @Inject constructor(private val file: File) {
-    private var appSettings: AppSettings = AppSettings()
+class AppSettingsFileRepository @Inject constructor(private val file: File)  {
+    private val appSettings: ArrayList<VariableItem> = ArrayList()
+    internal val changedCount: MutableState<Long> = mutableStateOf(0)
 
-    var username: String?
-        get() = appSettings.autoLoginSettings.username
-        set(value) {
-            appSettings.autoLoginSettings.username = value
-            exportSettings()
-        }
+    operator fun get(key: String): VariableItem {
+        return try {
+            val temp = appSettings.firstOrNull {
+                it.key == key
+            } ?: throw Exception("temp is null!")
 
-    var password: String?
-        get() = appSettings.autoLoginSettings.password
-        set(value) {
-            appSettings.autoLoginSettings.password = value
-            exportSettings()
+            val d = VariableItem(temp.key, temp.value)
+            d
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            VariableItem(key = key, value = null)
         }
+    }
 
-    var autoLogin: Boolean
-        get() = appSettings.autoLoginSettings.autoLogin
-        set(value) {
-            appSettings.autoLoginSettings.autoLogin = value
-            exportSettings()
+    operator fun set(key: String, value: String) {
+        try {
+            if (appSettings.firstOrNull { it.key == key } != null)
+                appSettings.firstOrNull { it.key == key }?.value = value
+            else appSettings.add(VariableItem(key = key, value = value))
         }
-
-    var subjectSchoolYearSettings: SubjectSchoolYearSettings
-        get() = appSettings.subjectSchoolYearSettings
-        set(value) {
-            appSettings.subjectSchoolYearSettings = value
-            exportSettings()
+        catch (ex: Exception) {
+            ex.printStackTrace()
         }
+        changedCount.value += 1
+        exportSettings()
+    }
 
     private fun importSettings() {
         try {
             val buffer: BufferedReader = file.bufferedReader()
             val inputStr = buffer.use { it.readText() }
             buffer.close()
-            appSettings = Gson().fromJson(inputStr, AppSettings::class.java)
+
+            val itemType = object : TypeToken<ArrayList<VariableItem>>() {}.type
+            val variableItemTemp = Gson().fromJson<ArrayList<VariableItem>>(inputStr, itemType)
+            appSettings.clear()
+            appSettings.addAll(variableItemTemp)
+            variableItemTemp.clear()
         }
         catch (ex: Exception) {
             ex.printStackTrace()

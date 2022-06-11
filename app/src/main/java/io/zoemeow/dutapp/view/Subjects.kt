@@ -24,26 +24,34 @@ import io.zoemeow.dutapp.model.enums.ProcessResult
 import io.zoemeow.dutapp.model.subject.SubjectFeeItem
 import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
 import io.zoemeow.dutapp.pagerTabIndicatorOffset
+import io.zoemeow.dutapp.ui.customs.LoadingFullScreen
+import io.zoemeow.dutapp.utils.DateToString
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
     val isLoadingLoggingIn = (
-            if (mainViewModel.variableData.get<ProcessResult>("LoggingIn") != null)
-                mainViewModel.variableData.get<ProcessResult>("LoggingIn")!!.value.value == ProcessResult.Running
+            if (mainViewModel.tempVarData["LoggingIn"].value != null)
+                mainViewModel.tempVarData["LoggingIn"].value!!.toInt() == ProcessResult.Running.result
             else false
             )
 
     if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) {
-        if (isLoadingLoggingIn)
-            AccountPageLoggingIn()
+        if (isLoadingLoggingIn) {
+            LoadingFullScreen(
+                title = "Please wait",
+                contentList = arrayListOf(
+                    "Logging you in..."
+                )
+            )
+        }
         else SubjectsNotLoggedIn()
     }
     else {
         val isLoadingSubjectSchedule = (
-                if (mainViewModel.variableData.get<ProcessResult>("SubjectSchedule") != null)
-                    mainViewModel.variableData.get<ProcessResult>("SubjectSchedule")!!.value.value == ProcessResult.Running
+                if (mainViewModel.tempVarData["SubjectSchedule"].value != null)
+                    mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() == ProcessResult.Running.result
                 else false
                 )
 
@@ -206,7 +214,7 @@ fun SubjectStudyItem(item: SubjectScheduleItem) {
     ) {
         Text("${item.id}")
         if (item.schedule_study != null) {
-            Column() {
+            Column {
                 for (i in item.schedule_study.schedule!!) {
                     Text("DayOfWeek: ${i.day_of_week}")
                     Text("Lesson: ${i.lesson?.start}-${i.lesson?.end}")
@@ -215,7 +223,7 @@ fun SubjectStudyItem(item: SubjectScheduleItem) {
         }
         Text("${item.name}")
         if (item.schedule_exam != null)
-            Text(getDateString(
+            Text(DateToString(
                 item.schedule_exam.date,
                 stringResource(id = R.string.navsubject_subject_datetimeformat),
                 "GMT+7")

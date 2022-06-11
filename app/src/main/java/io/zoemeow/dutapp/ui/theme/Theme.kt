@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -33,6 +34,9 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+val lightColorCurrent = mutableStateOf(LightColorScheme)
+val darkColorCurrent = mutableStateOf(DarkColorScheme)
+
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -45,8 +49,8 @@ fun MyApplicationTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> darkColorCurrent.value
+        else -> lightColorCurrent.value
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

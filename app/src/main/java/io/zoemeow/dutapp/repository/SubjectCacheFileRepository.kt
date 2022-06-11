@@ -1,5 +1,6 @@
 package io.zoemeow.dutapp.repository
 
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.google.gson.Gson
 import io.zoemeow.dutapp.model.account.AccountInformationItem
 import io.zoemeow.dutapp.model.cache.SubjectCacheItem
@@ -46,7 +47,7 @@ class SubjectCacheFileRepository @Inject constructor(
         exportSettings()
     }
 
-    fun getSubjectSchedule(): ArrayList<SubjectScheduleItem> {
+    fun getSubjectSchedule(): SnapshotStateList<SubjectScheduleItem> {
         return accountCache.subjectScheduleData
     }
 
@@ -75,7 +76,7 @@ class SubjectCacheFileRepository @Inject constructor(
         exportSettings()
     }
 
-    fun getSubjectFee(): ArrayList<SubjectFeeItem> {
+    fun getSubjectFee(): SnapshotStateList<SubjectFeeItem> {
         return accountCache.subjectFeeData
     }
 

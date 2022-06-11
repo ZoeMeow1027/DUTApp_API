@@ -13,3 +13,14 @@ MainViewModel & IsProcessingData
   - 1: Login page
   - 2: Logging in page
   - 3: Account Information page
+
+MainViewModel & AppSettings
+- AutoLogin: Auto login account
+- Username: Account user
+- Password: Account password
+- ScheduleYear:
+- ScheduleSemester:
+- ScheduleInSummer:
+
+MainViewModel & JsonSettings
+- JsonSettingsVersion

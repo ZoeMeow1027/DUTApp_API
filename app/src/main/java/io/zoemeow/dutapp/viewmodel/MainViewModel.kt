@@ -19,7 +19,6 @@ import io.zoemeow.dutapp.model.news.NewsGlobalListItem
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
 import io.zoemeow.dutapp.model.news.NewsSubjectListItem
 import io.zoemeow.dutapp.model.subject.SubjectScheduleItem
-import io.zoemeow.dutapp.model.subject.SubjectSchoolYearSettings
 import io.zoemeow.dutapp.repository.*
 import io.zoemeow.dutapp.utils.getCurrentLesson
 import io.zoemeow.dutapp.utils.getDayOfWeek
@@ -30,9 +29,8 @@ import kotlin.collections.ArrayList
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val dutNewsRepo: DutNewsApiRepository,
-    private val dutAccRepo: DutAccountApiRepository,
-    private val appSettingsRepo: AppSettingsFileRepository,
+    private val dutApiRepo: DutApiRepository,
+    private val appSettings2Repo: AppSettingsFileRepository,
     private val newsCacheFileRepo: NewsCacheFileRepository,
     private val accCacheFileRepo: SubjectCacheFileRepository,
 ) : ViewModel() {
@@ -48,8 +46,8 @@ class MainViewModel @Inject constructor(
     // News Details View when clicked a news.
     internal val newsDetailsClickedData: MutableState<NewsDetailsClickedData?> = mutableStateOf(null)
 
-    // Initialize is processing data
-    internal val variableData: VariableData = VariableData()
+    // Initialize temporary data
+    internal val tempVarData = TemporaryVariableData()
 
     // News data with cache (for easier manage).
     internal val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
@@ -58,18 +56,18 @@ class MainViewModel @Inject constructor(
     fun getNewsGlobal(force: Boolean) {
         viewModelScope.launch {
             if (force) {
-                variableData["NewsGlobalPage"] = 1
-                variableData.set("NewsGlobal", ProcessResult.Failed)
+                tempVarData["NewsGlobalPage"] = "1"
+                tempVarData["NewsGlobal"] = ProcessResult.Failed.result.toString()
             }
 
             if (
-                if (variableData.get<ProcessResult>("NewsGlobal") != null)
-                    variableData.get<ProcessResult>("NewsGlobal")!!.value.value == ProcessResult.Successful
+                if (tempVarData["NewsGlobal"].value != null)
+                    tempVarData["NewsGlobal"].value!!.toInt() == ProcessResult.Successful.result
                 else false
-            ) variableData["NewsGlobalPage"] = variableData.get<Int>("NewsGlobalPage")!!.value.value!!.plus(1)
+            ) tempVarData["NewsGlobalPage"] = tempVarData["NewsGlobalPage"].value!!.toInt().plus(1).toString()
 
             refreshNewsGlobalFromServer(
-                variableData.get<Int>("NewsGlobalPage")!!.value.value!!,
+                tempVarData["NewsGlobalPage"].value!!.toInt(),
                 !force
             )
         }
@@ -77,10 +75,10 @@ class MainViewModel @Inject constructor(
 
     // Refresh news global
     private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false) {
-        variableData.set("NewsGlobal", ProcessResult.Running)
+        tempVarData["NewsGlobal"] = ProcessResult.Running.result.toString()
 
         try {
-            val dataGlobalFromInternet: NewsGlobalListItem = dutNewsRepo.getNewsGlobal(page)
+            val dataGlobalFromInternet: NewsGlobalListItem = dutApiRepo.getNewsGlobal(page)
 
             if ((dataGlobalFromInternet.news_list != null) && (dataGlobalFromInternet.news_list.size > 0)) {
                 val list = ArrayList<NewsGlobalItem>()
@@ -98,19 +96,19 @@ class MainViewModel @Inject constructor(
 
                 newsCacheFileRepo.setNewsGlobal(list, append = append)
                 if (!append)
-                    newsCacheData.value.newsGlobalData.value.clear()
-                newsCacheData.value.newsGlobalData.value.addAll(list)
+                    newsCacheData.value.newsGlobalData.clear()
+                newsCacheData.value.newsGlobalData.addAll(list)
             } else throw Exception("News list empty.")
 
             // Return true
-            variableData.set("NewsGlobal", ProcessResult.Successful)
+            tempVarData["NewsGlobal"] = ProcessResult.Successful.result.toString()
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
 
             // Return false
-            variableData.set("NewsGlobal", ProcessResult.Failed)
+            tempVarData["NewsGlobal"] = ProcessResult.Failed.result.toString()
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
@@ -122,18 +120,18 @@ class MainViewModel @Inject constructor(
     fun getNewsSubject(force: Boolean) {
         viewModelScope.launch {
             if (force) {
-                variableData["NewsSubjectPage"] = 1
-                variableData.set("NewsSubject", ProcessResult.Failed)
+                tempVarData["NewsSubjectPage"] = 1.toString()
+                tempVarData["NewsSubject"] = ProcessResult.Failed.result.toString()
             }
 
             if (
-                if (variableData.get<ProcessResult>("NewsSubject") != null)
-                    variableData.get<ProcessResult>("NewsSubject")!!.value.value == ProcessResult.Successful
+                if (tempVarData["NewsSubject"].value != null)
+                    tempVarData["NewsSubject"].value == ProcessResult.Successful.result.toString()
                 else false
-            ) variableData["NewsSubjectPage"] = variableData.get<Int>("NewsSubjectPage")!!.value.value!!.plus(1)
+            ) tempVarData["NewsSubjectPage"] = tempVarData["NewsSubjectPage"].value!!.toInt().plus(1).toString()
 
             refreshNewsSubjectsFromServer(
-                variableData.get<Int>("NewsSubjectPage")!!.value.value!!,
+                tempVarData["NewsSubjectPage"].value!!.toInt(),
                 !force
             )
         }
@@ -141,10 +139,10 @@ class MainViewModel @Inject constructor(
 
     // Refresh news subject
     private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false) {
-        variableData.set("NewsSubject", ProcessResult.Running)
+        tempVarData["NewsSubject"] = ProcessResult.Running.result.toString()
 
         try {
-            val dataSubjectsFromInternet: NewsSubjectListItem = dutNewsRepo.getNewsSubject(page)
+            val dataSubjectsFromInternet: NewsSubjectListItem = dutApiRepo.getNewsSubject(page)
 
             if ((dataSubjectsFromInternet.news_list != null) && (dataSubjectsFromInternet.news_list.size > 0)) {
                 val list = ArrayList<NewsSubjectItem>()
@@ -162,19 +160,19 @@ class MainViewModel @Inject constructor(
 
                 newsCacheFileRepo.setNewsSubject(list, append = append)
                 if (!append)
-                    newsCacheData.value.newsSubjectData.value.clear()
-                newsCacheData.value.newsSubjectData.value.addAll(list)
+                    newsCacheData.value.newsSubjectData.clear()
+                newsCacheData.value.newsSubjectData.addAll(list)
             } else throw Exception("News list empty.")
 
             // Return true
-            variableData.set("NewsSubject", ProcessResult.Successful)
+            tempVarData["NewsSubject"] = ProcessResult.Successful.result.toString()
         }
         catch (ex: Exception) {
             exceptionCacheData.value.addException(ex)
             ex.printStackTrace()
 
             // Return false
-            variableData.set("NewsSubject", ProcessResult.Failed)
+            tempVarData["NewsSubject"] = ProcessResult.Failed.result.toString()
 
             // Notify that can't load news here.
             mainActivitySnackBarHostState.value?.showSnackbar(
@@ -192,12 +190,12 @@ class MainViewModel @Inject constructor(
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             // Navigate to page logging in
-            variableData["SettingsPanelIndex"] = 2
-            variableData.set("LoggingIn", ProcessResult.Running)
+            tempVarData["SettingsPanelIndex"] = "2"
+            tempVarData["LoggingIn"] = ProcessResult.Running.result.toString()
 
             try {
                 // Login
-                val result = dutAccRepo.dutLogin(user, pass)
+                val result = dutApiRepo.dutLogin(user, pass)
 
                 // If login successfully
                 if (result.logged_in) {
@@ -207,9 +205,9 @@ class MainViewModel @Inject constructor(
                     // Only logged in will can remember login
                     if (rememberLogin) {
                         // Save to app settings
-                        appSettingsRepo.autoLogin = rememberLogin
-                        appSettingsRepo.username = user
-                        appSettingsRepo.password = pass
+                        appSettings2Repo["AutoLogin"] = rememberLogin.toString()
+                        appSettings2Repo["Username"] = user
+                        appSettings2Repo["Password"] = pass
                     }
                 }
             }
@@ -219,11 +217,11 @@ class MainViewModel @Inject constructor(
             }
 
             // All result will be returned to main page.
-            variableData["SettingsPanelIndex"] = 0
+            tempVarData["SettingsPanelIndex"] = "0"
 
             // If logged in (check session id is not empty)
             if (accCacheData.value.sessionID.value.isNotEmpty()) {
-                variableData.set("LoggingIn", ProcessResult.Successful)
+                tempVarData["LoggingIn"] = ProcessResult.Successful.result.toString()
                 // Pre-load subject schedule, fee and account information
                 refreshSubjectSchedule()
                 refreshSubjectFee()
@@ -235,18 +233,18 @@ class MainViewModel @Inject constructor(
             }
             // If failed login at startup, will clear all auto login settings
             // and return back to login page
-            else if (variableData.get<Boolean>("AccLoginStartup")!!.value.value!!) {
-                variableData.set("LoggingIn", ProcessResult.Failed)
-                variableData["SettingsPanelIndex"] = 0
+            else if (tempVarData["AccLoginStartup"].value!!.toBoolean()) {
+                tempVarData["LoggingIn"] = ProcessResult.Failed.result.toString()
+                tempVarData["SettingsPanelIndex"] = "0"
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_autologinfailed)!!
                 )
-                variableData["AccLoginStartup"] = false
+                tempVarData["AccLoginStartup"] = false.toString()
             }
             // Any failed while logging in will be return to login/not logged in.
             else {
-                variableData.set("LoggingIn", ProcessResult.Failed)
-                variableData["SettingsPanelIndex"] = 1
+                tempVarData["LoggingIn"] = ProcessResult.Failed.result.toString()
+                tempVarData["SettingsPanelIndex"] = "1"
                 mainActivitySnackBarHostState.value?.showSnackbar(
                     mainActivityContext.value?.getString(R.string.navlogin_screenlogin_loginfailed)!!
                 )
@@ -265,11 +263,11 @@ class MainViewModel @Inject constructor(
                 accCacheData.value.clearAllData()
 
                 // Navigate to page not logged in
-                variableData["SettingsPanelIndex"] = 0
+                tempVarData["SettingsPanelIndex"] = "0"
 
                 // Logout
                 viewModelScope.launch {
-                    dutAccRepo.dutLogout(temp)
+                    dutApiRepo.dutLogout(temp)
                 }
 
                 // Show snack bar logged out
@@ -284,7 +282,7 @@ class MainViewModel @Inject constructor(
     }
 
     internal fun isAvailableOffline(): Boolean {
-        return appSettingsRepo.autoLogin &&
+        return appSettings2Repo["AutoLogin"].value.toBoolean() &&
                 accCacheFileRepo.getAccountInformation().studentId != null &&
                 accCacheFileRepo.getSubjectSchedule().size != 0 &&
                 accCacheFileRepo.getSubjectFee().size != 0
@@ -292,9 +290,9 @@ class MainViewModel @Inject constructor(
 
     // Clear auto login settings
     private fun clearAutoLogin() {
-        appSettingsRepo.autoLogin = false
-        appSettingsRepo.username = null
-        appSettingsRepo.password = null
+        appSettings2Repo["AutoLogin"] = false.toString()
+        appSettings2Repo["Username"] = ""
+        appSettings2Repo["Password"] = ""
         accCacheFileRepo.deleteAllSubjectSchedule()
         accCacheFileRepo.deleteAllSubjectFee()
         accCacheFileRepo.deleteAccountInformation()
@@ -304,14 +302,14 @@ class MainViewModel @Inject constructor(
     fun refreshSubjectSchedule() {
         viewModelScope.launch {
             try {
-                variableData["SubjectSchedule"] = ProcessResult.Running
+                tempVarData["SubjectSchedule"] = ProcessResult.Running.result.toString()
 
                 // Get subject schedule
-                val dataSubjectScheduleFromInternet = dutAccRepo.dutGetSubjectSchedule(
-                    accCacheData.value.sessionID.value,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectYear,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectSemester,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectInSummer
+                val dataSubjectScheduleFromInternet = dutApiRepo.dutGetSubjectSchedule(
+                    sid = accCacheData.value.sessionID.value,
+                    year = subjectSchoolYearSettings[0],
+                    semester = subjectSchoolYearSettings[1],
+                    inSummer = subjectSchoolYearSettings[2] == 1
                 )
 
                 if (dataSubjectScheduleFromInternet.schedule_list != null &&
@@ -327,14 +325,14 @@ class MainViewModel @Inject constructor(
                     accCacheData.value.subjectCredit = dataSubjectScheduleFromInternet.total_credit
                 }
 
-                variableData["SubjectSchedule"] = ProcessResult.Successful
+                tempVarData["SubjectSchedule"] = ProcessResult.Successful.result.toString()
                 accCacheData.value.subjectGetTime = dataSubjectScheduleFromInternet.date!!
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                variableData["SubjectSchedule"] = ProcessResult.Failed
+                tempVarData["SubjectSchedule"] = ProcessResult.Failed.result.toString()
             }
 
             // TODO: Development for current day subjects here!
@@ -346,14 +344,14 @@ class MainViewModel @Inject constructor(
     fun refreshSubjectFee() {
         viewModelScope.launch {
             try {
-                variableData.set("SubjectFee", ProcessResult.Running)
+                tempVarData["SubjectFee"] = ProcessResult.Running.result.toString()
 
                 // Get subject fee
-                val dataSubjectFeeFromInternet = dutAccRepo.dutGetSubjectFee(
-                    accCacheData.value.sessionID.value,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectYear,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectSemester,
-                    appSettingsRepo.subjectSchoolYearSettings.subjectInSummer
+                val dataSubjectFeeFromInternet = dutApiRepo.dutGetSubjectFee(
+                    sid = accCacheData.value.sessionID.value,
+                    year = subjectSchoolYearSettings[0],
+                    semester = subjectSchoolYearSettings[1],
+                    inSummer = subjectSchoolYearSettings[2] == 1
                 )
                 if (dataSubjectFeeFromInternet.fee_list != null &&
                     dataSubjectFeeFromInternet.fee_list.size > 0) {
@@ -370,13 +368,13 @@ class MainViewModel @Inject constructor(
                     accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money
                 }
                 accCacheData.value.subjectGetTime = dataSubjectFeeFromInternet.date!!
-                variableData["SubjectFee"] = ProcessResult.Successful
+                tempVarData["SubjectFee"] = ProcessResult.Successful.result.toString()
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                variableData.set("SubjectFee", ProcessResult.Failed)
+                tempVarData["SubjectFee"] = ProcessResult.Failed.result.toString()
             }
         }
     }
@@ -497,10 +495,10 @@ class MainViewModel @Inject constructor(
     private fun refreshAccountInfo() {
         viewModelScope.launch {
             try {
-                variableData.set("AccInfo", ProcessResult.Running)
+                tempVarData["AccInfo"] = ProcessResult.Running.result.toString()
 
                 // Get account information
-                val dataAccInfoFromInternet = dutAccRepo.dutGetAccInfo(
+                val dataAccInfoFromInternet = dutApiRepo.dutGetAccInfo(
                     accCacheData.value.sessionID.value)
                 if (dataAccInfoFromInternet.account_info != null) {
                     // Add to cache
@@ -510,13 +508,13 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
                 }
 
-                variableData.set("AccInfo", ProcessResult.Successful)
+                tempVarData["AccInfo"] = ProcessResult.Successful.result.toString()
             }
             // Any exception will be here!
             catch (ex: Exception) {
                 exceptionCacheData.value.addException(ex)
                 ex.printStackTrace()
-                variableData.set("AccInfo", ProcessResult.Failed)
+                tempVarData["AccInfo"] = ProcessResult.Failed.result.toString()
             }
         }
     }
@@ -526,16 +524,24 @@ class MainViewModel @Inject constructor(
         mainActivityContext.value?.startActivity(intent)
     }
 
-    var subjectSchoolYearSettings: SubjectSchoolYearSettings
-        get() = appSettingsRepo.subjectSchoolYearSettings
+    var subjectSchoolYearSettings: ArrayList<Int>
+        get() = arrayListOf(
+            appSettings2Repo["ScheduleYear"].value?.toInt() ?: 21,
+            appSettings2Repo["ScheduleSemester"].value?.toInt() ?: 2,
+            if (appSettings2Repo["ScheduleInSummer"].value?.toBoolean() == true)
+                1 else 0
+        )
         set(value) {
-            appSettingsRepo.subjectSchoolYearSettings = value
+            appSettings2Repo["ScheduleYear"] = value[0].toString()
+            appSettings2Repo["ScheduleSemester"] = value[1].toString()
+            appSettings2Repo["ScheduleInSummer"] =
+                (value[2] == 1).toString()
         }
 
     // Load news cache for backup if internet is not available.
     private fun loadAppCache() {
-        newsCacheData.value.newsGlobalData.value.addAll(newsCacheFileRepo.getNewsGlobal())
-        newsCacheData.value.newsSubjectData.value.addAll(newsCacheFileRepo.getNewsSubject())
+        newsCacheData.value.newsGlobalData.addAll(newsCacheFileRepo.getNewsGlobal())
+        newsCacheData.value.newsSubjectData.addAll(newsCacheFileRepo.getNewsSubject())
         accCacheData.value.accountInformationData.value = accCacheFileRepo.getAccountInformation()
         accCacheData.value.subjectScheduleData.clear()
         accCacheData.value.subjectScheduleData.addAll(accCacheFileRepo.getSubjectSchedule())
@@ -545,34 +551,37 @@ class MainViewModel @Inject constructor(
 
     // Detect auto login (login if user checked auto login check box)
     fun executeAutoLogin() {
-        if (appSettingsRepo.autoLogin) {
-            variableData["AccLoginStartup"] = true
-            if (appSettingsRepo.username != null && appSettingsRepo.password != null)
-                login(appSettingsRepo.username!!, appSettingsRepo.password!!)
+        if (appSettings2Repo["AutoLogin"].value.toBoolean()) {
+            tempVarData["AccLoginStartup"] = true.toString()
+            if (appSettings2Repo["Username"].value != null && appSettings2Repo["Password"].value != null)
+                login(appSettings2Repo["Username"].value!!, appSettings2Repo["Password"].value!!)
         }
     }
 
     // Load settings from appSettings.json, if needed.
     private fun loadSettings() {
-
+        if (appSettings2Repo["JsonSettingsVersion"].value != null) {
+            // TODO: Execute for json older than current here!
+        }
+        else appSettings2Repo["JsonSettingsVersion"] = "1"
     }
 
     private fun initializeVariables() {
         // Current news global page
-        variableData["NewsGlobalPage"] = 1
+        tempVarData["NewsGlobalPage"] = "1"
 
         // Current news subject page
-        variableData["NewsSubjectPage"] = 1
+        tempVarData["NewsSubjectPage"] = "1"
 
         // Check if have auto login
-        variableData["AccLoginStartup"] = false
+        tempVarData["AccLoginStartup"] = false.toString()
 
         // Settings View.
         // 0: Settings (and/or not logged in page)
         // 1: Login page
         // 2: Logging in page
         // 3: Account Information page
-        variableData["SettingsPanelIndex"] = 0
+        tempVarData["SettingsPanelIndex"] = "0"
     }
 
     init {

@@ -1,25 +1,25 @@
 package io.zoemeow.dutapp.data
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.zoemeow.dutapp.model.news.NewsGlobalItem
 import io.zoemeow.dutapp.model.news.NewsSubjectItem
 
 class NewsCacheData {
-    private var dataGlobal: MutableState<ArrayList<NewsGlobalItem>> = mutableStateOf(ArrayList())
-    private var dataSubject: MutableState<ArrayList<NewsSubjectItem>> = mutableStateOf(ArrayList())
+    private var dataGlobal: SnapshotStateList<NewsGlobalItem> = mutableStateListOf()
+    private var dataSubject: SnapshotStateList<NewsSubjectItem> = mutableStateListOf()
 
-    var newsGlobalData: MutableState<ArrayList<NewsGlobalItem>>
+    var newsGlobalData: SnapshotStateList<NewsGlobalItem>
         get() = dataGlobal
         set(value) {
-            dataGlobal.value.clear()
-            dataGlobal.value.addAll(value.value)
+            dataGlobal.clear()
+            dataGlobal.addAll(value)
         }
 
-    var newsSubjectData: MutableState<ArrayList<NewsSubjectItem>>
+    var newsSubjectData: SnapshotStateList<NewsSubjectItem>
         get() = dataSubject
         set(value) {
-            dataSubject.value.clear()
-            dataSubject.value.addAll(value.value)
+            dataSubject.clear()
+            dataSubject.addAll(value)
         }
 }
