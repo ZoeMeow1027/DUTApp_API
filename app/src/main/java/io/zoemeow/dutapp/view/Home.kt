@@ -24,11 +24,16 @@ import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
 fun Home(mainViewModel: MainViewModel) {
-    val isLoggedIn = remember { mutableStateOf(false) }
-    isLoggedIn.value = mainViewModel.isAvailableOffline()
-
+    val isLoadingSubject = remember { mutableStateOf(false) }
     val isLoggingIn = remember { mutableStateOf(false) }
+
     LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
+        isLoadingSubject.value = try {
+            mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() ==
+                    ProcessResult.Running.result
+        }
+        catch (_: Exception) { false }
+
         isLoggingIn.value = (
                 try { mainViewModel.tempVarData["LoggingIn"].value!!.toInt() == ProcessResult.Running.result }
                 catch (_: Exception) { false }
@@ -44,8 +49,8 @@ fun Home(mainViewModel: MainViewModel) {
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(optionsScrollState)
     ) {
-        if (isLoggedIn.value) {
-            HomePanelLoggedIn(mainViewModel)
+        if (mainViewModel.isLoggedIn()) {
+            HomePanelLoggedIn(mainViewModel, isLoadingSubject)
         }
         else {
             HomePageNotLoggedIn(isLoggingIn.value)
@@ -54,34 +59,25 @@ fun Home(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun HomePanelLoggedIn(mainViewModel: MainViewModel) {
-    val isLoadingSubject = remember { mutableStateOf(false) }
-
-    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
-        isLoadingSubject.value = (
-                try {
-                    mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() ==
-                            ProcessResult.Running.result
-                }
-                catch (_: Exception) { false }
-                )
-    }
-
+fun HomePanelLoggedIn(
+    mainViewModel: MainViewModel,
+    isLoadingSubject: MutableState<Boolean>
+) {
     // Examination in next 7 days
     HomePanelExamination(
         isLoadingSubject,
-        mainViewModel.subjectExam7Days
+        mainViewModel.subjectExaminationOn7Days
     )
     // Today lesson
     HomePanelToday(
         isLoadingSubject,
         getCurrentLesson(),
-        mainViewModel.subjectScheduleToday
+        mainViewModel.subjectScheduleOnToday
     )
     // Tomorrow lesson
     HomePanelTomorrow(
         isLoadingSubject,
-        mainViewModel.subjectScheduleTomorrow
+        mainViewModel.subjectScheduleOnFuture
     )
 }
 

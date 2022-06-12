@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.zoemeow.dutapp.repository.AppSettingsFileRepository
+import io.zoemeow.dutapp.repository.ExceptionFileRepository
 import io.zoemeow.dutapp.repository.NewsCacheFileRepository
 import io.zoemeow.dutapp.repository.SubjectCacheFileRepository
 import java.io.File
@@ -36,5 +37,13 @@ object AppFileModule {
         val filePath = "${context.filesDir.path}/appSettings2.json"
         val file = File(filePath)
         return AppSettingsFileRepository(file)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExceptionRepository(@ApplicationContext context: Context): ExceptionFileRepository {
+        val filePath = "${context.filesDir.path}/exception.json"
+        val file = File(filePath)
+        return ExceptionFileRepository(file)
     }
 }

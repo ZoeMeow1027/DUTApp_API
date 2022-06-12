@@ -18,20 +18,15 @@ import io.zoemeow.dutapp.ui.customs.SettingsPanel_LayoutOptionItem
 import io.zoemeow.dutapp.viewmodel.MainViewModel
 
 @Composable
-fun Settings(mainViewModel: MainViewModel) {
+fun Settings(
+    mainViewModel: MainViewModel,
+    currentPage: MutableState<Int>
+) {
     val isLoadingInfo = (
             if (mainViewModel.tempVarData["AccInfo"].value != null)
                 mainViewModel.tempVarData["AccInfo"].value!!.toInt() == ProcessResult.Running.result
             else false
             )
-
-    val currentPage = remember { mutableStateOf(0) }
-    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
-        currentPage.value = (
-                try { mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() }
-                catch (_: Exception) { 0 }
-                )
-    }
 
     when (currentPage.value) {
         0 -> SettingsMain(mainViewModel)
@@ -46,7 +41,7 @@ fun Settings(mainViewModel: MainViewModel) {
             )
         )
         3 -> AccountPageInformation(
-            accInfo = mainViewModel.accCacheData.value.accountInformationData.value,
+            accInfo = mainViewModel.accCacheData.accountInformationData.value,
             isLoading = isLoadingInfo,
         )
     }
@@ -137,8 +132,7 @@ fun SettingsOptionAccount(
     Column {
         SettingsOptionTitle(text = "Account")
         // If not logged in
-        if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() &&
-            !mainViewModel.isAvailableOffline()) {
+        if (!mainViewModel.isLoggedIn() && !mainViewModel.isAvailableOffline()) {
             // Login
             SettingsPanel_LayoutOptionItem(
                 textAbove = "Login",
@@ -156,7 +150,7 @@ fun SettingsOptionAccount(
                     clickable = { mainViewModel.tempVarData["SettingsPanelIndex"] = "3" }
                 )
                 // Re-login
-                if (mainViewModel.accCacheData.value.sessionID.value.isEmpty()) {
+                if (!mainViewModel.isLoggedIn()) {
                     SettingsPanel_LayoutOptionItem(
                         textAbove = "Re-login",
                         textBelow = "You have saved your login, but you haven't been logged in to system. Click here to re-login.",
@@ -166,7 +160,7 @@ fun SettingsOptionAccount(
                 // Logout
                 SettingsPanel_LayoutOptionItem(
                     textAbove = "Logout",
-                    textBelow = "Logged in as ${mainViewModel.accCacheData.value.accountInformationData.value.studentId}",
+                    textBelow = "Logged in as ${mainViewModel.accCacheData.accountInformationData.value.studentId}",
                     clickable = { toggleLogout() }
                 )
             }

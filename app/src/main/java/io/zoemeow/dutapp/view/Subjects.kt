@@ -37,7 +37,7 @@ fun Subjects(mainViewModel: MainViewModel) {
             else false
             )
 
-    if (mainViewModel.accCacheData.value.sessionID.value.isEmpty() && !mainViewModel.isAvailableOffline()) {
+    if (!mainViewModel.isLoggedIn() && !mainViewModel.isAvailableOffline()) {
         if (isLoadingLoggingIn) {
             LoadingFullScreen(
                 title = "Please wait",
@@ -58,7 +58,7 @@ fun Subjects(mainViewModel: MainViewModel) {
         when (isLoadingSubjectSchedule) {
             true -> SubjectsLoadingSubject()
             false -> SubjectsLoggedIn(
-                mainViewModel.accCacheData.value,
+                mainViewModel.accCacheData,
                 refreshRequest = {
                     mainViewModel.refreshSubjectSchedule()
                     mainViewModel.refreshSubjectFee()

@@ -8,6 +8,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,10 +34,9 @@ class MainViewModel @Inject constructor(
     private val appSettings2Repo: AppSettingsFileRepository,
     private val newsCacheFileRepo: NewsCacheFileRepository,
     private val accCacheFileRepo: SubjectCacheFileRepository,
-) : ViewModel() {
     // Exception will be saved here.
-    private val exceptionCacheData: MutableState<ExceptionCacheData> = mutableStateOf(ExceptionCacheData())
-
+    private val exceptionFileRepository: ExceptionFileRepository,
+) : ViewModel() {
     // Get SnackBar host state from main activity
     internal val mainActivitySnackBarHostState: MutableState<SnackbarHostState?> = mutableStateOf(null)
 
@@ -50,7 +50,10 @@ class MainViewModel @Inject constructor(
     internal val tempVarData = TemporaryVariableData()
 
     // News data with cache (for easier manage).
-    internal val newsCacheData: MutableState<NewsCacheData> = mutableStateOf(NewsCacheData())
+    internal val newsCacheData: NewsCacheData = NewsCacheData()
+
+    // Account information, subject schedule and subject fee cache
+    internal val accCacheData: AccountCacheData = AccountCacheData()
 
     // Get news global from server
     fun getNewsGlobal(force: Boolean) {
@@ -73,7 +76,12 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Refresh news global
+    /**
+     * Get news global from server.
+     *
+     * @param page: Page to get.
+     * @param append: If false, will delete current cache and write again.
+     */
     private suspend fun refreshNewsGlobalFromServer(page: Int = 1, append: Boolean = false) {
         tempVarData["NewsGlobal"] = ProcessResult.Running.result.toString()
 
@@ -96,16 +104,15 @@ class MainViewModel @Inject constructor(
 
                 newsCacheFileRepo.setNewsGlobal(list, append = append)
                 if (!append)
-                    newsCacheData.value.newsGlobalData.clear()
-                newsCacheData.value.newsGlobalData.addAll(list)
+                    newsCacheData.newsGlobalData.clear()
+                newsCacheData.newsGlobalData.addAll(list)
             } else throw Exception("News list empty.")
 
             // Return true
             tempVarData["NewsGlobal"] = ProcessResult.Successful.result.toString()
         }
         catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
 
             // Return false
             tempVarData["NewsGlobal"] = ProcessResult.Failed.result.toString()
@@ -137,7 +144,12 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Refresh news subject
+    /**
+     * Get news subject from server.
+     *
+     * @param page: Page to get.
+     * @param append: If false, will delete current cache and write again.
+     */
     private suspend fun refreshNewsSubjectsFromServer(page: Int = 1, append: Boolean = false) {
         tempVarData["NewsSubject"] = ProcessResult.Running.result.toString()
 
@@ -160,16 +172,15 @@ class MainViewModel @Inject constructor(
 
                 newsCacheFileRepo.setNewsSubject(list, append = append)
                 if (!append)
-                    newsCacheData.value.newsSubjectData.clear()
-                newsCacheData.value.newsSubjectData.addAll(list)
+                    newsCacheData.newsSubjectData.clear()
+                newsCacheData.newsSubjectData.addAll(list)
             } else throw Exception("News list empty.")
 
             // Return true
             tempVarData["NewsSubject"] = ProcessResult.Successful.result.toString()
         }
         catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
 
             // Return false
             tempVarData["NewsSubject"] = ProcessResult.Failed.result.toString()
@@ -181,12 +192,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Settings Information
-    internal val accCacheData: MutableState<AccountCacheData> = mutableStateOf(
-        AccountCacheData()
-    )
-
-    // Log in using your account
+    /**
+     * Login to server using your account in sv.dut.udn.vn.
+     *
+     * @param user: Username
+     * @param pass: Password
+     * @param rememberLogin: Set true to save account to your device, which is used for auto login at app startup.
+     */
     fun login(user: String, pass: String, rememberLogin: Boolean = true) {
         viewModelScope.launch {
             // Navigate to page logging in
@@ -200,7 +212,7 @@ class MainViewModel @Inject constructor(
                 // If login successfully
                 if (result.logged_in) {
                     // Save session id to cache
-                    accCacheData.value.sessionID.value = result.session_id!!
+                    accCacheData.sessionID.value = result.session_id!!
                     Log.d("CheckLogin", "Logged in")
                     // Only logged in will can remember login
                     if (rememberLogin) {
@@ -213,14 +225,14 @@ class MainViewModel @Inject constructor(
             }
             // Any exception will be here!
             catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
+                exceptionFileRepository.writeToFile(ex)
             }
 
             // All result will be returned to main page.
             tempVarData["SettingsPanelIndex"] = "0"
 
             // If logged in (check session id is not empty)
-            if (accCacheData.value.sessionID.value.isNotEmpty()) {
+            if (accCacheData.sessionID.value.isNotEmpty()) {
                 tempVarData["LoggingIn"] = ProcessResult.Successful.result.toString()
                 // Pre-load subject schedule, fee and account information
                 refreshSubjectSchedule()
@@ -252,6 +264,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Logout your account and delete all saved account from your device.
+     */
     fun logout() {
         viewModelScope.launch {
             try {
@@ -259,8 +274,8 @@ class MainViewModel @Inject constructor(
                 clearAutoLogin()
 
                 // Get information before logout
-                val temp = accCacheData.value.sessionID.value
-                accCacheData.value.clearAllData()
+                val temp = accCacheData.sessionID.value
+                accCacheData.clearAllData()
 
                 // Navigate to page not logged in
                 tempVarData["SettingsPanelIndex"] = "0"
@@ -276,19 +291,14 @@ class MainViewModel @Inject constructor(
                 )
             }
             catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
+                exceptionFileRepository.writeToFile(ex)
             }
         }
     }
 
-    internal fun isAvailableOffline(): Boolean {
-        return appSettings2Repo["AutoLogin"].value.toBoolean() &&
-                accCacheFileRepo.getAccountInformation().studentId != null &&
-                accCacheFileRepo.getSubjectSchedule().size != 0 &&
-                accCacheFileRepo.getSubjectFee().size != 0
-    }
-
-    // Clear auto login settings
+    /**
+     * Clear all auto login settings and subject cache.
+     */
     private fun clearAutoLogin() {
         appSettings2Repo["AutoLogin"] = false.toString()
         appSettings2Repo["Username"] = ""
@@ -298,7 +308,9 @@ class MainViewModel @Inject constructor(
         accCacheFileRepo.deleteAccountInformation()
     }
 
-    // Get subject schedule and subject fee
+    /**
+     * Get subject schedule from server with subjectSchoolYearSettings.
+     */
     fun refreshSubjectSchedule() {
         viewModelScope.launch {
             try {
@@ -306,7 +318,7 @@ class MainViewModel @Inject constructor(
 
                 // Get subject schedule
                 val dataSubjectScheduleFromInternet = dutApiRepo.dutGetSubjectSchedule(
-                    sid = accCacheData.value.sessionID.value,
+                    sid = accCacheData.sessionID.value,
                     year = subjectSchoolYearSettings[0],
                     semester = subjectSchoolYearSettings[1],
                     inSummer = subjectSchoolYearSettings[2] == 1
@@ -320,18 +332,17 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectCreditTotal(dataSubjectScheduleFromInternet.total_credit!!)
 
                     // Add to cache
-                    accCacheData.value.subjectScheduleData.clear()
-                    accCacheData.value.subjectScheduleData.addAll(dataSubjectScheduleFromInternet.schedule_list)
-                    accCacheData.value.subjectCredit = dataSubjectScheduleFromInternet.total_credit
+                    accCacheData.subjectScheduleData.clear()
+                    accCacheData.subjectScheduleData.addAll(dataSubjectScheduleFromInternet.schedule_list)
+                    accCacheData.subjectCredit = dataSubjectScheduleFromInternet.total_credit
                 }
 
                 tempVarData["SubjectSchedule"] = ProcessResult.Successful.result.toString()
-                accCacheData.value.subjectGetTime = dataSubjectScheduleFromInternet.date!!
+                accCacheData.subjectGetTime = dataSubjectScheduleFromInternet.date!!
             }
             // Any exception will be here!
             catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
-                ex.printStackTrace()
+                exceptionFileRepository.writeToFile(ex)
                 tempVarData["SubjectSchedule"] = ProcessResult.Failed.result.toString()
             }
 
@@ -341,6 +352,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Get subject fee from server with subjectSchoolYearSettings.
+     */
     fun refreshSubjectFee() {
         viewModelScope.launch {
             try {
@@ -348,7 +362,7 @@ class MainViewModel @Inject constructor(
 
                 // Get subject fee
                 val dataSubjectFeeFromInternet = dutApiRepo.dutGetSubjectFee(
-                    sid = accCacheData.value.sessionID.value,
+                    sid = accCacheData.sessionID.value,
                     year = subjectSchoolYearSettings[0],
                     semester = subjectSchoolYearSettings[1],
                     inSummer = subjectSchoolYearSettings[2] == 1
@@ -362,26 +376,50 @@ class MainViewModel @Inject constructor(
                     accCacheFileRepo.setSubjectMoneyTotal(dataSubjectFeeFromInternet.total_money!!)
 
                     // Add to cache
-                    accCacheData.value.subjectFeeData.clear()
-                    accCacheData.value.subjectFeeData.addAll(dataSubjectFeeFromInternet.fee_list)
-                    accCacheData.value.subjectCredit = dataSubjectFeeFromInternet.total_credit
-                    accCacheData.value.subjectMoney = dataSubjectFeeFromInternet.total_money
+                    accCacheData.subjectFeeData.clear()
+                    accCacheData.subjectFeeData.addAll(dataSubjectFeeFromInternet.fee_list)
+                    accCacheData.subjectCredit = dataSubjectFeeFromInternet.total_credit
+                    accCacheData.subjectMoney = dataSubjectFeeFromInternet.total_money
                 }
-                accCacheData.value.subjectGetTime = dataSubjectFeeFromInternet.date!!
+                accCacheData.subjectGetTime = dataSubjectFeeFromInternet.date!!
                 tempVarData["SubjectFee"] = ProcessResult.Successful.result.toString()
             }
             // Any exception will be here!
             catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
-                ex.printStackTrace()
+                exceptionFileRepository.writeToFile(ex)
                 tempVarData["SubjectFee"] = ProcessResult.Failed.result.toString()
             }
         }
     }
 
-    internal val subjectScheduleToday = mutableStateListOf<SubjectScheduleItem>()
+    /**
+     * Get account information from sv.dut.udn.vn.
+     */
+    private fun refreshAccountInfo() {
+        viewModelScope.launch {
+            try {
+                tempVarData["AccInfo"] = ProcessResult.Running.result.toString()
 
-    internal val subjectScheduleTomorrow = mutableStateListOf<SubjectScheduleItem>()
+                // Get account information
+                val dataAccInfoFromInternet = dutApiRepo.dutGetAccInfo(
+                    accCacheData.sessionID.value)
+                if (dataAccInfoFromInternet.account_info != null) {
+                    // Add to cache
+                    accCacheData.accountInformationData.value = dataAccInfoFromInternet.account_info
+                    // Write to json
+                    accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.account_info)
+                    accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
+                }
+
+                tempVarData["AccInfo"] = ProcessResult.Successful.result.toString()
+            }
+            // Any exception will be here!
+            catch (ex: Exception) {
+                exceptionFileRepository.writeToFile(ex)
+                tempVarData["AccInfo"] = ProcessResult.Failed.result.toString()
+            }
+        }
+    }
 
     private fun getSubjectScheduleInDayOfWeek(
         plusDayOfWeek: Int = 0,
@@ -408,7 +446,7 @@ class MainViewModel @Inject constructor(
 
         try {
             result.addAll(
-                accCacheData.value.subjectScheduleData
+                accCacheData.subjectScheduleData
                         // Filter day of week
                     .filter { it.schedule_study!!.schedule!!.any { dayOfWeekGet -> dayOfWeekGet.day_of_week == dayOfWeek } }
                         // Filter lesson
@@ -421,22 +459,19 @@ class MainViewModel @Inject constructor(
                     }
             )
         } catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
         }
 
         // Return result
         return result
     }
 
-    internal val subjectExam7Days = mutableStateListOf<SubjectScheduleItem>()
-
-    fun getSubjectExaminationOnDays(dayNext: Int = 7, hideAfterMin: Int = 60) {
+    private fun getSubjectExaminationOnDays(dayNext: Int = 7, hideAfterMin: Int = 60) {
         try {
             val timeUnix = System.currentTimeMillis()
-            subjectExam7Days.clear()
-            subjectExam7Days.addAll(
-                accCacheData.value.subjectScheduleData
+            subjectExaminationOn7Days.clear()
+            subjectExaminationOn7Days.addAll(
+                accCacheData.subjectScheduleData
                     // Filter time between 7 days
                     .filter {
                         (it.schedule_exam!!.date - timeUnix > 0) &&
@@ -449,34 +484,31 @@ class MainViewModel @Inject constructor(
             )
         }
         catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
         }
     }
 
-    fun getSubjectScheduleOnTodayAndTomorrow() {
-        // Current subject schedule today
+    private fun getSubjectScheduleOnTodayAndTomorrow() {
+        // Current subject schedule
         try {
-            subjectScheduleToday.clear()
-            subjectScheduleToday.addAll(
+            subjectScheduleOnToday.clear()
+            subjectScheduleOnToday.addAll(
                 getSubjectScheduleInDayOfWeek(0, 0)
             )
         }
         catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
         }
 
-        // Current subject schedule tomorrow
+        // Subject schedule on tomorrow
         try {
-            subjectScheduleTomorrow.clear()
-            subjectScheduleTomorrow.addAll(
+            subjectScheduleOnFuture.clear()
+            subjectScheduleOnFuture.addAll(
                 getSubjectScheduleInDayOfWeek(1, 0)
             )
         }
         catch (ex: Exception) {
-            exceptionCacheData.value.addException(ex)
-            ex.printStackTrace()
+            exceptionFileRepository.writeToFile(ex)
         }
     }
 
@@ -485,37 +517,9 @@ class MainViewModel @Inject constructor(
             refreshNewsGlobalFromServer()
             refreshNewsSubjectsFromServer()
         }
-        if (accCacheData.value.sessionID.value.isNotEmpty()) {
+        if (accCacheData.sessionID.value.isNotEmpty()) {
             refreshSubjectSchedule()
             refreshSubjectFee()
-        }
-    }
-
-    // Get account information
-    private fun refreshAccountInfo() {
-        viewModelScope.launch {
-            try {
-                tempVarData["AccInfo"] = ProcessResult.Running.result.toString()
-
-                // Get account information
-                val dataAccInfoFromInternet = dutApiRepo.dutGetAccInfo(
-                    accCacheData.value.sessionID.value)
-                if (dataAccInfoFromInternet.account_info != null) {
-                    // Add to cache
-                    accCacheData.value.accountInformationData.value = dataAccInfoFromInternet.account_info
-                    // Write to json
-                    accCacheFileRepo.setAccountInformation(dataAccInfoFromInternet.account_info)
-                    accCacheFileRepo.accountInformationUpdateTime = dataAccInfoFromInternet.date!!
-                }
-
-                tempVarData["AccInfo"] = ProcessResult.Successful.result.toString()
-            }
-            // Any exception will be here!
-            catch (ex: Exception) {
-                exceptionCacheData.value.addException(ex)
-                ex.printStackTrace()
-                tempVarData["AccInfo"] = ProcessResult.Failed.result.toString()
-            }
         }
     }
 
@@ -523,6 +527,32 @@ class MainViewModel @Inject constructor(
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         mainActivityContext.value?.startActivity(intent)
     }
+
+    // ============================== View area =====================================
+    // MainActivity
+    internal val subjectGetTime: Long
+        get() = accCacheData.subjectGetTime
+
+    internal val subjectExaminationOn7Days: SnapshotStateList<SubjectScheduleItem>
+        get() = accCacheData.subjectExaminationOn7Days
+
+    internal val subjectScheduleOnToday: SnapshotStateList<SubjectScheduleItem>
+        get() = accCacheData.subjectScheduleDataOnToday
+
+    internal val subjectScheduleOnFuture: SnapshotStateList<SubjectScheduleItem>
+        get() = accCacheData.subjectScheduleDataOnFuture
+
+    internal fun isLoggedIn(): Boolean {
+        return accCacheData.sessionID.value.isNotEmpty()
+    }
+
+    internal fun isAvailableOffline(): Boolean {
+        return appSettings2Repo["AutoLogin"].value.toBoolean() &&
+                accCacheFileRepo.getAccountInformation().studentId != null &&
+                accCacheFileRepo.getSubjectSchedule().size != 0 &&
+                accCacheFileRepo.getSubjectFee().size != 0
+    }
+    // ==============================================================================
 
     var subjectSchoolYearSettings: ArrayList<Int>
         get() = arrayListOf(
@@ -532,24 +562,37 @@ class MainViewModel @Inject constructor(
                 1 else 0
         )
         set(value) {
-            appSettings2Repo["ScheduleYear"] = value[0].toString()
-            appSettings2Repo["ScheduleSemester"] = value[1].toString()
-            appSettings2Repo["ScheduleInSummer"] =
-                (value[2] == 1).toString()
+            try {
+                if (value.size == 3) {
+                    appSettings2Repo["ScheduleYear"] = value[0].toString()
+                    appSettings2Repo["ScheduleSemester"] = value[1].toString()
+                    appSettings2Repo["ScheduleInSummer"] =
+                        (value[2] == 1).toString()
+                }
+                else throw Exception("Value length must equal 3!")
+            }
+            catch (ex: Exception) {
+                exceptionFileRepository.writeToFile(ex)
+            }
         }
 
-    // Load news cache for backup if internet is not available.
+    /**
+     * Load news cache for backup if internet is not available.
+     */
     private fun loadAppCache() {
-        newsCacheData.value.newsGlobalData.addAll(newsCacheFileRepo.getNewsGlobal())
-        newsCacheData.value.newsSubjectData.addAll(newsCacheFileRepo.getNewsSubject())
-        accCacheData.value.accountInformationData.value = accCacheFileRepo.getAccountInformation()
-        accCacheData.value.subjectScheduleData.clear()
-        accCacheData.value.subjectScheduleData.addAll(accCacheFileRepo.getSubjectSchedule())
-        accCacheData.value.subjectFeeData.clear()
-        accCacheData.value.subjectFeeData.addAll(accCacheFileRepo.getSubjectFee())
+        newsCacheData.newsGlobalData.addAll(newsCacheFileRepo.getNewsGlobal())
+        newsCacheData.newsSubjectData.addAll(newsCacheFileRepo.getNewsSubject())
+
+        accCacheData.accountInformationData.value = accCacheFileRepo.getAccountInformation()
+        accCacheData.subjectScheduleData.clear()
+        accCacheData.subjectScheduleData.addAll(accCacheFileRepo.getSubjectSchedule())
+        accCacheData.subjectFeeData.clear()
+        accCacheData.subjectFeeData.addAll(accCacheFileRepo.getSubjectFee())
     }
 
-    // Detect auto login (login if user checked auto login check box)
+    /**
+     * Detect auto login (login if user checked auto login check box)
+     */
     fun executeAutoLogin() {
         if (appSettings2Repo["AutoLogin"].value.toBoolean()) {
             tempVarData["AccLoginStartup"] = true.toString()
@@ -558,7 +601,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Load settings from appSettings.json, if needed.
+    /**
+     * Load settings from appSettings.json, if needed.
+     */
     private fun loadSettings() {
         if (appSettings2Repo["JsonSettingsVersion"].value != null) {
             // TODO: Execute for json older than current here!
@@ -566,6 +611,9 @@ class MainViewModel @Inject constructor(
         else appSettings2Repo["JsonSettingsVersion"] = "1"
     }
 
+    /**
+     * Varaiable at app startup.
+     */
     private fun initializeVariables() {
         // Current news global page
         tempVarData["NewsGlobalPage"] = "1"

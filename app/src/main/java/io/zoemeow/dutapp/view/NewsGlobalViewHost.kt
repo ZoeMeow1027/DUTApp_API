@@ -25,7 +25,7 @@ import io.zoemeow.dutapp.utils.LazyList_EndOfListHandler
 fun NewsGlobalViewHost(
     newsDetailsClickedData: MutableState<NewsDetailsClickedData?>,
     isLoading: Boolean,
-    data: MutableState<NewsCacheData>,
+    data: NewsCacheData,
     getDataRequested: (force: Boolean) -> Unit,
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(true)
@@ -54,7 +54,7 @@ fun NewsGlobalViewHost(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
         ) {
-            items(data.value.newsGlobalData) { item ->
+            items(data.newsGlobalData) { item ->
                 NewsPanel_NewsItem(
                     date = DateToString(item.date!!, "dd/MM/yyyy"),
                     title = item.title!!,

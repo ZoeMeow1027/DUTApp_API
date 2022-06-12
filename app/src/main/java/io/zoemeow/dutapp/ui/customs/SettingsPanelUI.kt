@@ -20,11 +20,11 @@ fun SettingsPanel_LayoutOptionItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(75.dp)
+            .wrapContentHeight()
             .clickable { clickable() },
         contentAlignment = Alignment.CenterStart,
     ) {
-        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp)) {
+        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)) {
             Text(
                 text = textAbove,
                 style = MaterialTheme.typography.titleMedium,

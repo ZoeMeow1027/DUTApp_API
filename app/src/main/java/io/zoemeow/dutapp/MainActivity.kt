@@ -15,7 +15,6 @@ import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -28,7 +27,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.pager.ExperimentalPagerApi
 import dagger.hilt.android.AndroidEntryPoint
 import io.zoemeow.dutapp.data.NewsDetailsClickedData
 import io.zoemeow.dutapp.navbar.NavBarItemObject
@@ -62,7 +60,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (getCurrentUnixTime() - (mainViewModel?.accCacheData?.value?.subjectGetTime ?: 0) > 5*60*1000) {
+        if (getCurrentUnixTime() - (mainViewModel?.subjectGetTime ?: 0) > 5*60*1000) {
             mainViewModel?.reloadViewSubjectScheduleOnDay()
         }
     }
@@ -71,8 +69,6 @@ class MainActivity : ComponentActivity() {
 @OptIn(
     ExperimentalMaterialApi::class,
     ExperimentalMaterial3Api::class,
-    ExperimentalComposeUiApi::class,
-    ExperimentalPagerApi::class
 )
 @Composable
 fun MainScreen(mainViewModel: MainViewModel) {
@@ -135,11 +131,6 @@ fun MainScreen(mainViewModel: MainViewModel) {
     }
 }
 
-@OptIn(
-    ExperimentalComposeUiApi::class,
-    ExperimentalPagerApi::class,
-    ExperimentalMaterial3Api::class,
-)
 @Composable
 fun NavigationHost(
     navController: NavHostController,
@@ -172,15 +163,23 @@ fun NavigationHost(
 
         composable(NavRoutes.Settings.route) {
             // If still in Login, roll back to Not Logged In, else will return to main screen.
+            val currentPage = remember { mutableStateOf(0) }
+            LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
+                currentPage.value = mainViewModel.tempVarData["SettingsPanelIndex"].value?.toInt() ?: 0
+            }
+
             BackHandler(
-                enabled = (mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() != 0),
+                enabled = currentPage.value != 0,
                 onBack = {
                     // If in page logging, prevent back
                     if (mainViewModel.tempVarData["SettingsPanelIndex"].value!!.toInt() != 2)
                         mainViewModel.tempVarData["SettingsPanelIndex"] = "0"
                 }
             )
-            Settings(mainViewModel = mainViewModel)
+            Settings(
+                mainViewModel = mainViewModel,
+                currentPage = currentPage
+            )
         }
     }
 }
