@@ -51,14 +51,25 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun Subjects(mainViewModel: MainViewModel) {
-    val isLoadingLoggingIn = (
-            if (mainViewModel.tempVarData["LoggingIn"].value != null)
-                mainViewModel.tempVarData["LoggingIn"].value!!.toInt() == ProcessResult.Running.result
-            else false
-            )
+    val isLoadingLoggingIn = remember { mutableStateOf(false) }
+    val isLoadingSubjectSchedule = remember { mutableStateOf(false) }
+
+    LaunchedEffect(mainViewModel.tempVarData.changedCount.value) {
+        isLoadingLoggingIn.value = (
+                if (mainViewModel.tempVarData["LoggingIn"].value != null)
+                    mainViewModel.tempVarData["LoggingIn"].value!!.toInt() == ProcessResult.Running.result
+                else false
+                )
+
+        isLoadingSubjectSchedule.value = (
+                if (mainViewModel.tempVarData["SubjectSchedule"].value != null)
+                    mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() == ProcessResult.Running.result
+                else false
+                )
+    }
 
     if (!mainViewModel.isLoggedIn() && !mainViewModel.isAvailableOffline()) {
-        if (isLoadingLoggingIn) {
+        if (isLoadingLoggingIn.value) {
             LoadingFullScreen(
                 title = "Please wait",
                 contentList = arrayListOf(
@@ -69,13 +80,7 @@ fun Subjects(mainViewModel: MainViewModel) {
         else SubjectsNotLoggedIn()
     }
     else {
-        val isLoadingSubjectSchedule = (
-                if (mainViewModel.tempVarData["SubjectSchedule"].value != null)
-                    mainViewModel.tempVarData["SubjectSchedule"].value!!.toInt() == ProcessResult.Running.result
-                else false
-                )
-
-        when (isLoadingSubjectSchedule) {
+        when (isLoadingSubjectSchedule.value) {
             true -> SubjectsLoadingSubject()
             false -> SubjectsLoggedIn(
                 mainViewModel.accCacheData,
@@ -550,7 +555,7 @@ fun Test(item: SubjectScheduleItem) {
                     ) {
                         if (item.schedule_exam?.room != null)
                             Text(
-                                text = "Nhóm thi: ${item.schedule_exam.group} \nThi chung: ${item.schedule_exam.is_global} \nNgày: " + getDateString(item.schedule_exam.date, stringResource(id = R.string.navsubject_subject_datetimeformat), "GMT+7").split(" ")[0] + "\nGiờ: " + getDateString(item.schedule_exam.date, stringResource(id = R.string.navsubject_subject_datetimeformat), "GMT+7").replace(":", "h").split(" ")[1] + "\nPhòng: ${item.schedule_exam.room}"
+                                text = "Nhóm thi: ${item.schedule_exam.group} \nThi chung: ${item.schedule_exam.is_global} \nNgày: " + DateToString(item.schedule_exam.date, stringResource(id = R.string.navsubject_subject_datetimeformat), "GMT+7").split(" ")[0] + "\nGiờ: " + DateToString(item.schedule_exam.date, stringResource(id = R.string.navsubject_subject_datetimeformat), "GMT+7").replace(":", "h").split(" ")[1] + "\nPhòng: ${item.schedule_exam.room}"
                             )
                         else
                             Text(
