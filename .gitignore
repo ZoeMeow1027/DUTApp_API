@@ -1,10 +1,13 @@
-[VS IDE & VS Code]
-.vs/*
-.vscode/*
+[VS IDE & VS Code, if exists]
+.vs
+.vscode
+
+[Android Studio & Intellij IDEA]
+.gradle
+.idea
 
 [Android]
 *.iml
-.gradle
 /local.properties
 /.idea/caches
 /.idea/libraries
