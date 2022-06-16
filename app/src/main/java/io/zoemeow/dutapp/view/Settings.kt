@@ -160,7 +160,7 @@ fun SettingsOptionAccount(
                 // Logout
                 SettingsPanel_LayoutOptionItem(
                     textAbove = "Logout",
-                    textBelow = "Logged in as ${mainViewModel.accCacheData.accountInformationData.value.studentId}",
+                    textBelow = "You are logged in as ${mainViewModel.accCacheData.accountInformationData.value.studentId}",
                     clickable = { toggleLogout() }
                 )
             }

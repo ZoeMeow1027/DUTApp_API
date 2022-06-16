@@ -102,6 +102,12 @@ fun HomePanelExamination(
                         text = "${dateTimeToString(item.schedule_exam!!.date - getCurrentUnixTime())} (${DateToString(item.schedule_exam.date, "dd/MM/yyyy HH:mm", "GMT+7")})",
                         style = MaterialTheme.typography.bodyLarge
                     )
+                    if (item.schedule_exam.room != null) {
+                        Text(
+                            text = "In room: ${item.schedule_exam.room}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
         }
