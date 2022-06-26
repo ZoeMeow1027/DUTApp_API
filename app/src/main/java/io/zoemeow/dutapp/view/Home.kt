@@ -49,7 +49,7 @@ fun Home(mainViewModel: MainViewModel) {
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(optionsScrollState)
     ) {
-        if (mainViewModel.isLoggedIn()) {
+        if (mainViewModel.isLoggedIn() || mainViewModel.isAvailableOffline()) {
             HomePanelLoggedIn(mainViewModel, isLoadingSubject)
         }
         else {
