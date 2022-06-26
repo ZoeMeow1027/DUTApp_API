@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DUT</string>
+    <string name="app_name">DUT app</string>
     <string name="topbar_name">DUT App for Android (alpha)</string>
     <string name="text_loading">Loading data from server\nPlease wait…</string>
 
