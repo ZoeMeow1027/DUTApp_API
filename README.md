@@ -1,6 +1,10 @@
 # DUT app for Android
 - A app which optimize view in sv.dut.dun.vn page for Android. Data from heroku (dutapi).
 
+**DECREPATED:**
+- This app is being decrepated due to server https://dutapi.herokuapp.com downed. You still can clone, change its host server and build your own server to continue using. For now, this app is unusable.
+- This will replace by [DUTApp.Android](https://github.com/ZoeMeow5466/DUTApp.Android), which is better performance and better design.
+
 # About API
 - Using [Heroku (https://dutapi.herokuapp.com)](https://dutapi.herokuapp.com) that provide API for supporting my project.
 - You can visit [here](https://github.com/ZoeMeow5466/DUTAPI_Heroku) for more information about host.
